@@ -156,129 +156,127 @@ function AppContent() {
   // Show dashboard if user is authenticated
   if (user && currentView === 'dashboard') {
     return (
-      <Router>
-        <Routes>
-          <Route path="/" element={<MainLayout />}>
-            <Route index element={<Navigate to="/dashboard" replace />} />
-            <Route path="dashboard" element={
-              <div className="p-6">
-                <div className="mb-8">
-                  <h1 className="text-3xl font-bold text-white mb-2">
-                    Tableau de Bord {user.role === 'SUPERADMIN' ? 'Super Administrateur' : user.role === 'ADMIN' ? 'Administrateur' : user.role === 'SUBSCRIBER' ? 'Abonné' : 'Invité'}
-                  </h1>
-                  <p className="text-gray-400">
-                    {user.role === 'ADMIN' || user.role === 'SUPERADMIN' ? 'Gérez les accès et surveillez l\'activité réseau' : user.role === 'SUBSCRIBER' ? 'Gérez vos appareils et consultez votre usage' : 'Votre session internet est maintenant active'}
-                  </p>
-                </div>
-                <DashboardStats userRole={user.role} />
+      <Routes>
+        <Route path="/" element={<MainLayout />}>
+          <Route index element={<Navigate to="/dashboard" replace />} />
+          <Route path="dashboard" element={
+            <div className="p-6">
+              <div className="mb-8">
+                <h1 className="text-3xl font-bold text-white mb-2">
+                  Tableau de Bord {user.role === 'SUPERADMIN' ? 'Super Administrateur' : user.role === 'ADMIN' ? 'Administrateur' : user.role === 'SUBSCRIBER' ? 'Abonné' : 'Invité'}
+                </h1>
+                <p className="text-gray-400">
+                  {user.role === 'ADMIN' || user.role === 'SUPERADMIN' ? 'Gérez les accès et surveillez l\'activité réseau' : user.role === 'SUBSCRIBER' ? 'Gérez vos appareils et consultez votre usage' : 'Votre session internet est maintenant active'}
+                </p>
               </div>
-            } />
-            <Route path="profile" element={<div className="p-6"><ProfileSettings /></div>} />
-            <Route path="devices" element={
-              <div className="p-6">
-                <DeviceManager 
-                  devices={mockDevices}
-                  maxDevices={5}
-                  onAddDevice={async (device) => console.log('Add device:', device)}
-                  onUpdateDevice={async (id, data) => console.log('Update device:', id, data)}
-                  onRemoveDevice={async (id) => console.log('Remove device:', id)}
-                />
-              </div>
-            } />
-            <Route path="usage" element={
-              <div className="p-6">
-                <UsageStats 
-                  usage={mockUsageData}
-                  onRenewSubscription={() => console.log('Renew subscription')}
-                  onUpgradePlan={() => console.log('Upgrade plan')}
-                />
-              </div>
-            } />
-            <Route path="timeline" element={<div className="p-6"><Timeline /></div>} />
-            <Route path="calendar" element={<div className="p-6"><Calendar /></div>} />
-            <Route path="tasks" element={<div className="p-6"><TaskBoard /></div>} />
-            <Route path="files" element={<div className="p-6"><FileManager /></div>} />
-            <Route path="notes" element={<div className="p-6"><NotesManager /></div>} />
-            <Route path="contacts" element={<div className="p-6"><ContactsManager /></div>} />
-            <Route path="users" element={<div className="p-6"><AdminPanel user={user} /></div>} />
-            <Route path="validation" element={
-              <div className="p-6">
-                <div className="space-y-6">
-                  <h1 className="text-3xl font-bold text-white">Validation des Comptes</h1>
-                  {/* Mock pending user for demo */}
-                  <UserValidation
-                    user={{
-                      id: 999,
-                      email: 'nouveau@example.com',
-                      username: 'nouveau_user',
-                      first_name: 'Nouveau',
-                      last_name: 'Utilisateur',
-                      phone: '+33123456789',
-                      requested_plan: mockPlans[2],
-                      created_at: '2024-01-15T10:00:00Z',
-                      email_verified: true,
-                      registration_ip: '192.168.1.100',
-                      user_agent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-                    }}
-                    onValidate={async (id, notes) => console.log('Validate user:', id, notes)}
-                    onReject={async (id, reason) => console.log('Reject user:', id, reason)}
-                  />
-                </div>
-              </div>
-            } />
-            <Route path="voucher-generator" element={
-              <div className="p-6">
-                <VoucherGenerator
-                  plans={mockPlans}
-                  onGenerate={async (data) => {
-                    console.log('Generate vouchers:', data)
-                    // Mock generated vouchers
-                    return Array.from({ length: data.quantity }, (_, i) => ({
-                      code: `TEST${String(i + 1).padStart(4, '0')}`,
-                      id: i + 1,
-                      plan: mockPlans.find(p => p.id === data.plan_id)!,
-                      valid_from: data.valid_from,
-                      valid_until: data.valid_until,
-                      status: 'ACTIVE'
-                    }))
+              <DashboardStats userRole={user.role} />
+            </div>
+          } />
+          <Route path="profile" element={<div className="p-6"><ProfileSettings /></div>} />
+          <Route path="devices" element={
+            <div className="p-6">
+              <DeviceManager 
+                devices={mockDevices}
+                maxDevices={5}
+                onAddDevice={async (device) => console.log('Add device:', device)}
+                onUpdateDevice={async (id, data) => console.log('Update device:', id, data)}
+                onRemoveDevice={async (id) => console.log('Remove device:', id)}
+              />
+            </div>
+          } />
+          <Route path="usage" element={
+            <div className="p-6">
+              <UsageStats 
+                usage={mockUsageData}
+                onRenewSubscription={() => console.log('Renew subscription')}
+                onUpgradePlan={() => console.log('Upgrade plan')}
+              />
+            </div>
+          } />
+          <Route path="timeline" element={<div className="p-6"><Timeline /></div>} />
+          <Route path="calendar" element={<div className="p-6"><Calendar /></div>} />
+          <Route path="tasks" element={<div className="p-6"><TaskBoard /></div>} />
+          <Route path="files" element={<div className="p-6"><FileManager /></div>} />
+          <Route path="notes" element={<div className="p-6"><NotesManager /></div>} />
+          <Route path="contacts" element={<div className="p-6"><ContactsManager /></div>} />
+          <Route path="users" element={<div className="p-6"><AdminPanel user={user} /></div>} />
+          <Route path="validation" element={
+            <div className="p-6">
+              <div className="space-y-6">
+                <h1 className="text-3xl font-bold text-white">Validation des Comptes</h1>
+                {/* Mock pending user for demo */}
+                <UserValidation
+                  user={{
+                    id: 999,
+                    email: 'nouveau@example.com',
+                    username: 'nouveau_user',
+                    first_name: 'Nouveau',
+                    last_name: 'Utilisateur',
+                    phone: '+33123456789',
+                    requested_plan: mockPlans[2],
+                    created_at: '2024-01-15T10:00:00Z',
+                    email_verified: true,
+                    registration_ip: '192.168.1.100',
+                    user_agent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
                   }}
+                  onValidate={async (id, notes) => console.log('Validate user:', id, notes)}
+                  onReject={async (id, reason) => console.log('Reject user:', id, reason)}
                 />
               </div>
-            } />
-            <Route path="session-monitor" element={
-              <div className="p-6">
-                <SessionMonitor
-                  sessions={mockActiveSessions}
-                  onTerminateSession={async (id) => console.log('Terminate session:', id)}
-                  onRefresh={() => console.log('Refresh sessions')}
-                />
-              </div>
-            } />
-            <Route path="quota-manager" element={
-              <div className="p-6">
-                <QuotaManager
-                  userQuotas={mockUserQuotas}
-                  onExtendQuota={async (userId, type, amount) => console.log('Extend quota:', userId, type, amount)}
-                  onSuspendUser={async (userId, reason) => console.log('Suspend user:', userId, reason)}
-                />
-              </div>
-            } />
-            <Route path="system-metrics" element={
-              <div className="p-6">
-                <SystemMetrics
-                  metrics={mockSystemMetrics}
-                  onRefresh={() => console.log('Refresh metrics')}
-                  onExportMetrics={() => console.log('Export metrics')}
-                />
-              </div>
-            } />
-            <Route path="vouchers" element={<div className="p-6"><AdminPanel user={user} /></div>} />
-            <Route path="sessions" element={<div className="p-6"><AdminPanel user={user} /></div>} />
-            <Route path="config" element={<div className="p-6"><AdminPanel user={user} /></div>} />
-            <Route path="audit" element={<div className="p-6"><AdminPanel user={user} /></div>} />
-          </Route>
-        </Routes>
-      </Router>
+            </div>
+          } />
+          <Route path="voucher-generator" element={
+            <div className="p-6">
+              <VoucherGenerator
+                plans={mockPlans}
+                onGenerate={async (data) => {
+                  console.log('Generate vouchers:', data)
+                  // Mock generated vouchers
+                  return Array.from({ length: data.quantity }, (_, i) => ({
+                    code: `TEST${String(i + 1).padStart(4, '0')}`,
+                    id: i + 1,
+                    plan: mockPlans.find(p => p.id === data.plan_id)!,
+                    valid_from: data.valid_from,
+                    valid_until: data.valid_until,
+                    status: 'ACTIVE'
+                  }))
+                }}
+              />
+            </div>
+          } />
+          <Route path="session-monitor" element={
+            <div className="p-6">
+              <SessionMonitor
+                sessions={mockActiveSessions}
+                onTerminateSession={async (id) => console.log('Terminate session:', id)}
+                onRefresh={() => console.log('Refresh sessions')}
+              />
+            </div>
+          } />
+          <Route path="quota-manager" element={
+            <div className="p-6">
+              <QuotaManager
+                userQuotas={mockUserQuotas}
+                onExtendQuota={async (userId, type, amount) => console.log('Extend quota:', userId, type, amount)}
+                onSuspendUser={async (userId, reason) => console.log('Suspend user:', userId, reason)}
+              />
+            </div>
+          } />
+          <Route path="system-metrics" element={
+            <div className="p-6">
+              <SystemMetrics
+                metrics={mockSystemMetrics}
+                onRefresh={() => console.log('Refresh metrics')}
+                onExportMetrics={() => console.log('Export metrics')}
+              />
+            </div>
+          } />
+          <Route path="vouchers" element={<div className="p-6"><AdminPanel user={user} /></div>} />
+          <Route path="sessions" element={<div className="p-6"><AdminPanel user={user} /></div>} />
+          <Route path="config" element={<div className="p-6"><AdminPanel user={user} /></div>} />
+          <Route path="audit" element={<div className="p-6"><AdminPanel user={user} /></div>} />
+        </Route>
+      </Routes>
     )
   }
 
