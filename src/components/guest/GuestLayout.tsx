@@ -151,7 +151,7 @@ export function GuestLayout() {
       <footer className="bg-gray-950 border-t border-gray-800 px-4 py-4">
         <div className="container mx-auto text-center">
           <p className="text-xs text-gray-500">
-            {t('guest.layout.footer') || 'Session invité temporaire - Respectez les conditions d\'utilisation'}
+            {t('guest.layout.footer') || 'Session invité temporaire - Code à usage unique - Respectez les conditions d\'utilisation'}
           </p>
         </div>
       </footer>

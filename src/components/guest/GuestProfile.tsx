@@ -11,8 +11,9 @@ import {
   Save,
   Volume2,
   VolumeX,
-  Mail,
-  Smartphone
+  Key,
+  AlertTriangle,
+  CheckCircle
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -81,7 +82,8 @@ export function GuestProfile() {
     type: 'Accès Temporaire',
     plan: 'Invité 24h',
     startTime: new Date(Date.now() - 5400000).toISOString(),
-    expiresAt: new Date(Date.now() + 81000000).toISOString()
+    expiresAt: new Date(Date.now() + 81000000).toISOString(),
+    isCodeExpired: true
   }
 
   return (
@@ -145,10 +147,19 @@ export function GuestProfile() {
                     <h3 className="text-lg font-semibold text-white">
                       {t('guest.profile.guestUser') || 'Utilisateur Invité'}
                     </h3>
-                    <p className="text-gray-400">{t('guest.profile.accessCode') || 'Code d\'accès'}: <code className="text-blue-300">{sessionInfo.code}</code></p>
-                    <Badge variant="secondary" className="mt-2">
-                      {sessionInfo.type}
-                    </Badge>
+                    <p className="text-gray-400">
+                      {t('guest.profile.accessCode') || 'Code d\'accès'}: <code className="text-blue-300">{sessionInfo.code}</code>
+                    </p>
+                    <div className="flex items-center gap-2 mt-2">
+                      <Badge variant="secondary">
+                        {sessionInfo.type}
+                      </Badge>
+                      {sessionInfo.isCodeExpired && (
+                        <Badge variant="destructive" className="text-xs">
+                          {t('guest.profile.codeExpired') || 'Code Expiré'}
+                        </Badge>
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -156,6 +167,9 @@ export function GuestProfile() {
                   <div className="p-4 rounded-lg bg-gray-800/50 border border-gray-700">
                     <h4 className="font-medium text-white mb-2">{t('guest.profile.plan') || 'Plan Actuel'}</h4>
                     <p className="text-gray-300">{sessionInfo.plan}</p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      {t('guest.profile.singleUse') || 'Usage unique - Code expiré après connexion'}
+                    </p>
                   </div>
                   <div className="p-4 rounded-lg bg-gray-800/50 border border-gray-700">
                     <h4 className="font-medium text-white mb-2">{t('guest.profile.sessionDuration') || 'Durée de Session'}</h4>
@@ -178,23 +192,27 @@ export function GuestProfile() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Database className="h-5 w-5 text-purple-400" />
+                  <AlertTriangle className="h-5 w-5 text-yellow-400" />
                   {t('guest.profile.limitations') || 'Limitations du Compte Invité'}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3 text-sm">
                   <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-800/30">
-                    <Mail className="h-4 w-4 text-gray-400" />
-                    <span className="text-gray-400">{t('guest.profile.noEmailChange') || 'Modification d\'email non disponible'}</span>
+                    <Key className="h-4 w-4 text-gray-400" />
+                    <span className="text-gray-400">{t('guest.profile.noEmailChange') || 'Pas de gestion d\'email disponible'}</span>
                   </div>
                   <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-800/30">
-                    <Smartphone className="h-4 w-4 text-gray-400" />
-                    <span className="text-gray-400">{t('guest.profile.noPhoneChange') || 'Modification de téléphone non disponible'}</span>
+                    <User className="h-4 w-4 text-gray-400" />
+                    <span className="text-gray-400">{t('guest.profile.noPhoneChange') || 'Pas de gestion de téléphone disponible'}</span>
                   </div>
                   <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-800/30">
                     <Shield className="h-4 w-4 text-gray-400" />
-                    <span className="text-gray-400">{t('guest.profile.noPasswordChange') || 'Gestion de mot de passe non disponible'}</span>
+                    <span className="text-gray-400">{t('guest.profile.noPasswordChange') || 'Pas de gestion de mot de passe disponible'}</span>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 rounded-lg bg-red-500/10 border border-red-500/20">
+                    <AlertTriangle className="h-4 w-4 text-red-400" />
+                    <span className="text-red-300">{t('guest.profile.singleUseWarning') || 'Code à usage unique - Impossible de se reconnecter après déconnexion'}</span>
                   </div>
                 </div>
                 <div className="mt-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">

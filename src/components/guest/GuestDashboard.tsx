@@ -11,7 +11,9 @@ import {
   CheckCircle,
   Smartphone,
   TrendingDown,
-  TrendingUp
+  TrendingUp,
+  User,
+  Settings
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -55,6 +57,13 @@ interface GuestSessionData {
     name: string
     type: string
   }
+  voucherInfo: {
+    code: string
+    plan: string
+    maxUses: number
+    usedCount: number
+    isExpired: boolean
+  }
 }
 
 export function GuestDashboard() {
@@ -72,6 +81,8 @@ export function GuestDashboard() {
       setLoading(true)
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000))
+      
+      const voucherCode = user?.email?.split('-')[1]?.split('@')[0]?.toUpperCase() || 'DEMO1234'
       
       const mockData: GuestSessionData = {
         id: 'guest_session_123',
@@ -105,6 +116,13 @@ export function GuestDashboard() {
         device: {
           name: 'Appareil Invité',
           type: 'smartphone'
+        },
+        voucherInfo: {
+          code: voucherCode,
+          plan: 'Accès Invité 24h',
+          maxUses: 1,
+          usedCount: 1,
+          isExpired: true // Code expired after first use
         }
       }
       
@@ -113,7 +131,7 @@ export function GuestDashboard() {
     }
 
     loadSessionData()
-  }, [])
+  }, [user])
 
   // Update time remaining countdown
   useEffect(() => {
@@ -148,7 +166,12 @@ export function GuestDashboard() {
   }
 
   const handleExtendSession = () => {
-    toast.success(t('guest.dashboard.extendRequested') || 'Demande d\'extension envoyée')
+    toast.error(t('guest.dashboard.cannotExtend') || 'Impossible d\'étendre une session invité. Le code est à usage unique.')
+  }
+
+  const handleProfile = () => {
+    navigate('/guest/profile')
+    toast.success(t('guest.dashboard.viewingProfile') || 'Affichage du profil')
   }
 
   const getQuotaStatus = (percent: number) => {
@@ -216,11 +239,25 @@ export function GuestDashboard() {
                 {t('guest.dashboard.title') || 'Session Invité Active'}
               </h1>
               <p className="text-sm text-gray-400">
-                {user?.email || t('guest.dashboard.guestUser') || 'Utilisateur Invité'}
+                Code: <code className="text-blue-300">{sessionData.voucherInfo.code}</code>
+                {sessionData.voucherInfo.isExpired && (
+                  <Badge variant="secondary" className="ml-2 text-xs">
+                    {t('guest.dashboard.codeExpired') || 'Code Expiré'}
+                  </Badge>
+                )}
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={handleProfile}
+              className="focus:ring-2 focus:ring-blue-500"
+            >
+              <User className="h-4 w-4 mr-2" />
+              {t('guest.dashboard.profile') || 'Profil'}
+            </Button>
             <Button 
               variant="outline" 
               size="sm"
@@ -245,6 +282,23 @@ export function GuestDashboard() {
       </div>
 
       <div className="container mx-auto px-4 py-6 sm:py-8 max-w-6xl">
+        {/* Voucher Info Alert */}
+        <Card className="mb-6 border-blue-500/20 bg-blue-500/5">
+          <CardContent className="p-4">
+            <div className="flex items-start gap-3">
+              <CheckCircle className="h-5 w-5 text-blue-400 mt-0.5 flex-shrink-0" />
+              <div className="flex-1">
+                <h3 className="font-medium text-blue-300 mb-1">
+                  {t('guest.dashboard.voucherUsed') || 'Code d\'Accès Utilisé'}
+                </h3>
+                <p className="text-sm text-blue-200">
+                  {t('guest.dashboard.voucherInfo') || 'Votre code'} <code className="bg-gray-900 px-2 py-1 rounded">{sessionData.voucherInfo.code}</code> {t('guest.dashboard.voucherExpired') || 'a été utilisé et est maintenant expiré. Votre session reste active jusqu\'à épuisement des quotas.'}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Status Overview */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
           <Card>
@@ -360,7 +414,7 @@ export function GuestDashboard() {
                 <div className="p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
                   <p className="text-sm text-yellow-300 flex items-center gap-2">
                     <AlertTriangle className="h-4 w-4" />
-                    {t('guest.dashboard.dataWarning') || 'Attention : quota données bientôt atteint'}
+                    {t('guest.dashboard.dataWarning') || 'Attention : quota données bientôt atteint. Connexion automatiquement coupée à 100%.'}
                   </p>
                 </div>
               )}
@@ -403,7 +457,7 @@ export function GuestDashboard() {
                 <div className="p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
                   <p className="text-sm text-yellow-300 flex items-center gap-2">
                     <AlertTriangle className="h-4 w-4" />
-                    {t('guest.dashboard.timeWarning') || 'Attention : quota temps bientôt atteint'}
+                    {t('guest.dashboard.timeWarning') || 'Attention : quota temps bientôt atteint. Connexion automatiquement coupée à 100%.'}
                   </p>
                 </div>
               )}
@@ -476,24 +530,39 @@ export function GuestDashboard() {
           </CardContent>
         </Card>
 
-        {/* Actions */}
-        <div className="flex flex-col sm:flex-row gap-4 justify-center mb-6 sm:mb-8">
-          <Button 
-            variant="outline" 
-            onClick={handleExtendSession}
-            className="flex items-center gap-2 focus:ring-2 focus:ring-blue-500"
-          >
-            <Clock className="h-4 w-4" />
-            {t('guest.dashboard.extendSession') || 'Prolonger la Session'}
-          </Button>
-          <Button 
-            onClick={() => navigate('/guest/profile')}
-            className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 focus:ring-2 focus:ring-blue-500"
-          >
-            <Smartphone className="h-4 w-4" />
-            {t('guest.dashboard.viewProfile') || 'Voir le Profil'}
-          </Button>
-        </div>
+        {/* Voucher Information */}
+        <Card className="mb-6 sm:mb-8">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Key className="h-5 w-5 text-yellow-400" />
+              {t('guest.dashboard.voucherDetails') || 'Détails du Code d\'Accès'}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="text-center p-3 rounded-lg bg-gray-800/50">
+                <p className="text-sm text-gray-400 mb-1">{t('guest.dashboard.voucherCode') || 'Code'}</p>
+                <code className="text-yellow-300 font-mono text-lg">{sessionData.voucherInfo.code}</code>
+              </div>
+              <div className="text-center p-3 rounded-lg bg-gray-800/50">
+                <p className="text-sm text-gray-400 mb-1">{t('guest.dashboard.plan') || 'Plan'}</p>
+                <p className="text-white font-medium text-sm">{sessionData.voucherInfo.plan}</p>
+              </div>
+              <div className="text-center p-3 rounded-lg bg-gray-800/50">
+                <p className="text-sm text-gray-400 mb-1">{t('guest.dashboard.usage') || 'Utilisation'}</p>
+                <p className="text-white font-medium">
+                  {sessionData.voucherInfo.usedCount} / {sessionData.voucherInfo.maxUses}
+                </p>
+              </div>
+              <div className="text-center p-3 rounded-lg bg-gray-800/50">
+                <p className="text-sm text-gray-400 mb-1">{t('guest.dashboard.codeStatus') || 'Statut Code'}</p>
+                <Badge variant={sessionData.voucherInfo.isExpired ? 'destructive' : 'success'}>
+                  {sessionData.voucherInfo.isExpired ? t('guest.dashboard.expired') || 'Expiré' : t('guest.dashboard.active') || 'Actif'}
+                </Badge>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Terms Reminder */}
         <Card>
@@ -518,8 +587,12 @@ export function GuestDashboard() {
                 {t('guest.dashboard.terms.rule3') || 'Respect des quotas alloués'}
               </li>
               <li className="flex items-start gap-2">
-                <CheckCircle className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
-                {t('guest.dashboard.terms.rule4') || 'Déconnexion automatique à expiration'}
+                <AlertTriangle className="h-4 w-4 text-yellow-400 mt-0.5 flex-shrink-0" />
+                {t('guest.dashboard.terms.rule4') || 'Déconnexion automatique à épuisement des quotas'}
+              </li>
+              <li className="flex items-start gap-2">
+                <AlertTriangle className="h-4 w-4 text-red-400 mt-0.5 flex-shrink-0" />
+                {t('guest.dashboard.terms.rule5') || 'Code d\'accès à usage unique - impossible de se reconnecter'}
               </li>
             </ul>
           </CardContent>

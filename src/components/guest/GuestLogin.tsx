@@ -294,6 +294,10 @@ export function GuestLogin() {
                 <CheckCircle className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
                 {t('guest.login.help.step3') || 'La connexion se fait automatiquement'}
               </p>
+              <p className="flex items-start gap-2">
+                <AlertTriangle className="h-4 w-4 text-yellow-400 mt-0.5 flex-shrink-0" />
+                {t('guest.login.help.step4') || 'Chaque code n\'est utilisable qu\'une seule fois'}
+              </p>
             </div>
             <div className="text-center pt-2">
               <button 
