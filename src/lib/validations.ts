@@ -2,77 +2,77 @@ import { z } from 'zod'
 
 // Auth schemas
 export const loginSchema = z.object({
-  email: z.string().email('error.invalidEmail'),
-  password: z.string().min(1, 'error.required'),
+  email: z.string().email('Adresse e-mail invalide'),
+  password: z.string().min(1, 'Mot de passe requis'),
 })
 
 export const registerSchema = z.object({
-  email: z.string().email('error.invalidEmail'),
-  username: z.string().min(3, 'Username must be at least 3 characters'),
-  first_name: z.string().min(1, 'error.required'),
-  last_name: z.string().min(1, 'error.required'),
+  email: z.string().email('Adresse e-mail invalide'),
+  username: z.string().min(3, 'Le nom d\'utilisateur doit contenir au moins 3 caractères'),
+  first_name: z.string().min(1, 'Prénom requis'),
+  last_name: z.string().min(1, 'Nom requis'),
   phone: z.string().optional(),
   password: z.string()
-    .min(12, 'error.passwordTooShort')
-    .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*])/, 'Password must contain uppercase, lowercase, number and special character'),
+    .min(12, 'Le mot de passe doit contenir au moins 12 caractères')
+    .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*])/, 'Le mot de passe doit contenir majuscule, minuscule, chiffre et caractère spécial'),
   password_confirm: z.string(),
 }).refine((data) => data.password === data.password_confirm, {
-  message: 'error.passwordMismatch',
+  message: 'Les mots de passe ne correspondent pas',
   path: ['password_confirm'],
 })
 
 export const voucherLoginSchema = z.object({
-  code: z.string().length(8, 'Voucher code must be exactly 8 characters'),
+  code: z.string().length(8, 'Le code invité doit contenir exactement 8 caractères'),
 })
 
 export const forgotPasswordSchema = z.object({
-  email: z.string().email('error.invalidEmail'),
+  email: z.string().email('Adresse e-mail invalide'),
 })
 
 export const resetPasswordSchema = z.object({
-  token: z.string().min(1, 'error.required'),
-  password: z.string().min(12, 'error.passwordTooShort'),
+  token: z.string().min(1, 'Token requis'),
+  password: z.string().min(12, 'Le mot de passe doit contenir au moins 12 caractères'),
   password_confirm: z.string(),
 }).refine((data) => data.password === data.password_confirm, {
-  message: 'error.passwordMismatch',
+  message: 'Les mots de passe ne correspondent pas',
   path: ['password_confirm'],
 })
 
 // Profile schemas
 export const profileUpdateSchema = z.object({
-  first_name: z.string().min(1, 'error.required'),
-  last_name: z.string().min(1, 'error.required'),
-  username: z.string().min(3, 'Username must be at least 3 characters'),
-  email: z.string().email('error.invalidEmail'),
+  first_name: z.string().min(1, 'Prénom requis'),
+  last_name: z.string().min(1, 'Nom requis'),
+  username: z.string().min(3, 'Le nom d\'utilisateur doit contenir au moins 3 caractères'),
+  email: z.string().email('Adresse e-mail invalide'),
   phone: z.string().optional(),
 })
 
 export const changePasswordSchema = z.object({
-  currentPassword: z.string().min(1, 'error.required'),
-  newPassword: z.string().min(12, 'error.passwordTooShort'),
+  currentPassword: z.string().min(1, 'Mot de passe actuel requis'),
+  newPassword: z.string().min(12, 'Le nouveau mot de passe doit contenir au moins 12 caractères'),
   confirmPassword: z.string(),
 }).refine((data) => data.newPassword === data.confirmPassword, {
-  message: 'error.passwordMismatch',
+  message: 'Les mots de passe ne correspondent pas',
   path: ['confirmPassword'],
 })
 
 // Device schemas
 export const deviceSchema = z.object({
-  name: z.string().min(1, 'error.required'),
-  mac_address: z.string().regex(/^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$/, 'Invalid MAC address format'),
+  name: z.string().min(1, 'Nom requis'),
+  mac_address: z.string().regex(/^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$/, 'Format d\'adresse MAC invalide'),
 })
 
 // Voucher schemas
 export const voucherCreateSchema = z.object({
-  plan: z.string().min(1, 'error.required'),
-  valid_from: z.string().min(1, 'error.required'),
-  valid_until: z.string().min(1, 'error.required'),
-  max_uses: z.number().min(1, 'Must be at least 1'),
+  plan: z.string().min(1, 'Plan requis'),
+  valid_from: z.string().min(1, 'Date de début requise'),
+  valid_until: z.string().min(1, 'Date de fin requise'),
+  max_uses: z.number().min(1, 'Doit être au moins 1'),
 })
 
 // Task schemas
 export const taskSchema = z.object({
-  title: z.string().min(1, 'error.required'),
+  title: z.string().min(1, 'Titre requis'),
   description: z.string().optional(),
   priority: z.enum(['low', 'medium', 'high', 'urgent']),
   status: z.enum(['todo', 'in-progress', 'review', 'done']),
@@ -83,9 +83,9 @@ export const taskSchema = z.object({
 
 // Note schemas
 export const noteSchema = z.object({
-  title: z.string().min(1, 'error.required'),
-  content: z.string().min(1, 'error.required'),
-  category: z.string().min(1, 'error.required'),
+  title: z.string().min(1, 'Titre requis'),
+  content: z.string().min(1, 'Contenu requis'),
+  category: z.string().min(1, 'Catégorie requise'),
   color: z.string().optional(),
   isPinned: z.boolean().optional(),
   isFavorite: z.boolean().optional(),
@@ -93,19 +93,19 @@ export const noteSchema = z.object({
 
 // Contact schemas
 export const contactSchema = z.object({
-  name: z.string().min(1, 'error.required'),
-  email: z.string().email('error.invalidEmail'),
-  phone: z.string().min(1, 'error.required'),
-  company: z.string().min(1, 'error.required'),
-  role: z.string().min(1, 'error.required'),
+  name: z.string().min(1, 'Nom requis'),
+  email: z.string().email('Adresse e-mail invalide'),
+  phone: z.string().min(1, 'Téléphone requis'),
+  company: z.string().min(1, 'Entreprise requise'),
+  role: z.string().min(1, 'Rôle requis'),
   category: z.enum(['client', 'fournisseur', 'interne', 'support']),
 })
 
 // Event schemas
 export const eventSchema = z.object({
-  title: z.string().min(1, 'error.required'),
-  date: z.string().min(1, 'error.required'),
-  time: z.string().min(1, 'error.required'),
+  title: z.string().min(1, 'Titre requis'),
+  date: z.string().min(1, 'Date requise'),
+  time: z.string().min(1, 'Heure requise'),
   type: z.enum(['maintenance', 'meeting', 'deadline', 'reminder']),
   attendees: z.number().optional(),
 })

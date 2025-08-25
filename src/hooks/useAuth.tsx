@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import { api } from '@/lib/api'
+import toast from 'react-hot-toast'
 
 interface User {
   id: number
@@ -32,13 +33,14 @@ interface AuthContextType {
   }) => Promise<void>
   logout: () => Promise<void>
   clearError: () => void
+  updateUser: (userData: Partial<User>) => void
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -47,6 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const checkAuthStatus = async () => {
     try {
+      setLoading(true)
       const response = await api.getProfile()
       setUser(response.user || response)
     } catch (error) {
@@ -63,9 +66,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setError(null)
       const response = await api.login(email, password)
       setUser(response.user)
+      
+      // Store auth state in localStorage for persistence
+      localStorage.setItem('auth_user', JSON.stringify(response.user))
     } catch (error) {
-      setError(error instanceof Error ? error.message : 'Login failed')
-      throw error
+      const errorMessage = error instanceof Error ? error.message : 'Échec de la connexion'
+      setError(errorMessage)
+      throw new Error(errorMessage)
     } finally {
       setLoading(false)
     }
@@ -77,7 +84,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setError(null)
       
       // Mock implementation - in production this would use the captive portal API
-      // For demo purposes, we'll simulate a guest user
       const mockGuestUser: User = {
         id: 999,
         email: `guest-${code.toLowerCase()}@temp.local`,
@@ -98,11 +104,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error('Le code doit contenir exactement 8 caractères')
       }
       
-      // Mock validation - in production this would validate against the voucher API
+      // Mock validation - check against demo codes
+      const validCodes = ['DEMO1234', 'TEST5678', 'GUEST999', 'INVITE01']
+      if (!validCodes.includes(code.toUpperCase())) {
+        throw new Error('Code invité invalide ou expiré')
+      }
+      
       setUser(mockGuestUser)
+      localStorage.setItem('auth_user', JSON.stringify(mockGuestUser))
     } catch (error) {
-      setError(error instanceof Error ? error.message : 'Invalid voucher code')
-      throw error
+      const errorMessage = error instanceof Error ? error.message : 'Code invité invalide'
+      setError(errorMessage)
+      throw new Error(errorMessage)
     } finally {
       setLoading(false)
     }
@@ -122,8 +135,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setError(null)
       await api.register(userData)
     } catch (error) {
-      setError(error instanceof Error ? error.message : 'Registration failed')
-      throw error
+      const errorMessage = error instanceof Error ? error.message : 'Échec de l\'inscription'
+      setError(errorMessage)
+      throw new Error(errorMessage)
     } finally {
       setLoading(false)
     }
@@ -131,17 +145,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     try {
+      setLoading(true)
       await api.logout()
     } catch (error) {
       // Ignore logout errors
     } finally {
       setUser(null)
+      setError(null)
+      localStorage.removeItem('auth_user')
+      setLoading(false)
     }
   }
 
   const clearError = () => {
     setError(null)
   }
+
+  const updateUser = (userData: Partial<User>) => {
+    if (user) {
+      const updatedUser = { ...user, ...userData }
+      setUser(updatedUser)
+      localStorage.setItem('auth_user', JSON.stringify(updatedUser))
+    }
+  }
+
+  // Check for stored auth on mount
+  useEffect(() => {
+    const storedUser = localStorage.getItem('auth_user')
+    if (storedUser && !user) {
+      try {
+        setUser(JSON.parse(storedUser))
+      } catch (error) {
+        localStorage.removeItem('auth_user')
+      }
+    }
+  }, [])
 
   const value: AuthContextType = {
     user,
@@ -151,7 +189,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     voucherLogin,
     register,
     logout,
-    clearError
+    clearError,
+    updateUser
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

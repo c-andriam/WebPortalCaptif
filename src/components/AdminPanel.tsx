@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { 
   Users, 
   UserCheck, 
@@ -11,12 +12,22 @@ import {
   Shield,
   Clock,
   Database,
-  Activity
+  Activity,
+  Eye,
+  Edit,
+  Trash2
 } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
 import { Badge } from './ui/badge'
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from './ui/dropdown-menu'
+import toast from 'react-hot-toast'
 
 interface User {
   id: number
@@ -30,7 +41,9 @@ interface AdminPanelProps {
 }
 
 export function AdminPanel({ user }: AdminPanelProps) {
+  const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState<'users' | 'vouchers' | 'sessions' | 'audit'>('users')
+  const [searchTerm, setSearchTerm] = useState('')
   
   // Mock data
   const pendingUsers = [
@@ -80,10 +93,76 @@ export function AdminPanel({ user }: AdminPanelProps) {
     }
   }
 
+  const handleUserAction = (action: string, userId: number, userEmail: string) => {
+    switch (action) {
+      case 'validate':
+        toast.success(`Utilisateur ${userEmail} validé avec succès`)
+        break
+      case 'reject':
+        toast.error(`Utilisateur ${userEmail} rejeté`)
+        break
+      case 'view':
+        toast.success(`Affichage du profil de ${userEmail}`)
+        break
+      case 'edit':
+        toast.success(`Édition de ${userEmail}`)
+        break
+      case 'suspend':
+        toast.error(`Utilisateur ${userEmail} suspendu`)
+        break
+      default:
+        toast.success(`Action ${action} sur ${userEmail}`)
+    }
+  }
+
+  const handleVoucherAction = (action: string, code: string) => {
+    switch (action) {
+      case 'view':
+        toast.success(`Détails du code ${code}`)
+        break
+      case 'revoke':
+        toast.error(`Code ${code} révoqué`)
+        break
+      case 'copy':
+        navigator.clipboard.writeText(code)
+        toast.success(`Code ${code} copié dans le presse-papiers`)
+        break
+      default:
+        toast.success(`Action ${action} sur le code ${code}`)
+    }
+  }
+
+  const handleSessionAction = (action: string, sessionId: number, userEmail: string) => {
+    switch (action) {
+      case 'terminate':
+        toast.error(`Session de ${userEmail} terminée`)
+        break
+      case 'view':
+        toast.success(`Détails de la session de ${userEmail}`)
+        break
+      default:
+        toast.success(`Action ${action} sur la session de ${userEmail}`)
+    }
+  }
+
+  const handleCreateVoucher = () => {
+    navigate('/voucher-generator')
+    toast.success('Redirection vers le générateur de codes')
+  }
+
+  const filteredData = (data: any[]) => {
+    if (!searchTerm) return data
+    return data.filter(item => 
+      Object.values(item).some(value => 
+        String(value).toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    )
+  }
+
   return (
-    <div className="container mx-auto px-4 py-8 max-w-7xl">
+    <div className="space-y-6">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-white mb-2">
+        <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">
           Panneau d'Administration
         </h1>
         <p className="text-gray-400">
@@ -92,21 +171,37 @@ export function AdminPanel({ user }: AdminPanelProps) {
       </div>
 
       {/* Navigation Tabs */}
-      <div className="flex space-x-1 mb-8 bg-gray-800 p-1 rounded-lg">
+      <div className="flex flex-wrap gap-1 bg-gray-800 p-1 rounded-lg">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id as any)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+            className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-md text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 ${
               activeTab === tab.id
                 ? 'bg-blue-500 text-white'
                 : 'text-gray-400 hover:text-white hover:bg-gray-700'
             }`}
           >
             <tab.icon className="h-4 w-4" />
-            {tab.label}
+            <span className="hidden sm:inline">{tab.label}</span>
           </button>
         ))}
+      </div>
+
+      {/* Search */}
+      <div className="flex items-center gap-4">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+          <Input
+            placeholder="Rechercher..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        <Button variant="outline" size="icon" aria-label="Filtres">
+          <Filter className="h-4 w-4" />
+        </Button>
       </div>
 
       {/* Users Tab */}
@@ -115,39 +210,47 @@ export function AdminPanel({ user }: AdminPanelProps) {
           {/* Pending Validations */}
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                   <CardTitle className="flex items-center gap-2">
                     <UserCheck className="h-5 w-5 text-yellow-400" />
-                    Validations en Attente ({pendingUsers.length})
+                    Validations en Attente ({filteredData(pendingUsers).length})
                   </CardTitle>
                   <CardDescription>Nouveaux comptes nécessitant une validation</CardDescription>
                 </div>
-                <Badge variant="warning">{pendingUsers.length} en attente</Badge>
+                <Badge variant="warning">{filteredData(pendingUsers).length} en attente</Badge>
               </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {pendingUsers.map((user) => (
-                  <div key={user.id} className="flex items-center justify-between p-4 rounded-lg bg-gray-800/50 border border-gray-700">
+                {filteredData(pendingUsers).map((user) => (
+                  <div key={user.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-lg bg-gray-800/50 border border-gray-700">
                     <div className="flex-1">
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 mb-2">
                         <div>
                           <p className="font-medium text-white">{user.name}</p>
                           <p className="text-sm text-gray-400">{user.email}</p>
                         </div>
                         <Badge variant="outline">{user.plan}</Badge>
                       </div>
-                      <p className="text-xs text-gray-500 mt-1">Inscrit le {user.created}</p>
+                      <p className="text-xs text-gray-500">Inscrit le {user.created}</p>
                     </div>
                     <div className="flex gap-2">
-                      <Button size="sm" className="bg-green-600 hover:bg-green-700">
+                      <Button 
+                        size="sm" 
+                        className="bg-green-600 hover:bg-green-700 focus:ring-2 focus:ring-green-500"
+                        onClick={() => handleUserAction('validate', user.id, user.email)}
+                      >
                         <UserCheck className="h-4 w-4 mr-1" />
-                        Valider
+                        <span className="hidden sm:inline">Valider</span>
                       </Button>
-                      <Button size="sm" variant="destructive">
+                      <Button 
+                        size="sm" 
+                        variant="destructive"
+                        onClick={() => handleUserAction('reject', user.id, user.email)}
+                      >
                         <UserX className="h-4 w-4 mr-1" />
-                        Rejeter
+                        <span className="hidden sm:inline">Rejeter</span>
                       </Button>
                     </div>
                   </div>
@@ -159,42 +262,54 @@ export function AdminPanel({ user }: AdminPanelProps) {
           {/* Active Users */}
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <CardTitle className="flex items-center gap-2">
                   <Users className="h-5 w-5 text-green-400" />
-                  Utilisateurs Actifs ({activeUsers.length})
+                  Utilisateurs Actifs ({filteredData(activeUsers).length})
                 </CardTitle>
-                <div className="flex gap-2">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
-                    <Input placeholder="Rechercher..." className="pl-10 w-64" />
-                  </div>
-                  <Button variant="outline" size="icon">
-                    <Filter className="h-4 w-4" />
-                  </Button>
-                </div>
               </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {activeUsers.map((user) => (
-                  <div key={user.id} className="flex items-center justify-between p-4 rounded-lg bg-gray-800/50 border border-gray-700">
+                {filteredData(activeUsers).map((user) => (
+                  <div key={user.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-lg bg-gray-800/50 border border-gray-700">
                     <div className="flex-1">
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 mb-2">
                         <div>
                           <p className="font-medium text-white">{user.name}</p>
                           <p className="text-sm text-gray-400">{user.email}</p>
                         </div>
                         <Badge variant="success">{user.status}</Badge>
                       </div>
-                      <div className="flex gap-4 mt-2 text-xs text-gray-500">
+                      <div className="flex gap-4 text-xs text-gray-500">
                         <span>{user.devices} appareils</span>
                         <span>{user.usage} utilisés</span>
                       </div>
                     </div>
-                    <Button variant="ghost" size="icon">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" aria-label="Actions">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => handleUserAction('view', user.id, user.email)}>
+                          <Eye className="h-4 w-4 mr-2" />
+                          Voir le profil
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleUserAction('edit', user.id, user.email)}>
+                          <Edit className="h-4 w-4 mr-2" />
+                          Modifier
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          onClick={() => handleUserAction('suspend', user.id, user.email)}
+                          className="text-red-400"
+                        >
+                          <UserX className="h-4 w-4 mr-2" />
+                          Suspendre
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 ))}
               </div>
@@ -208,12 +323,15 @@ export function AdminPanel({ user }: AdminPanelProps) {
         <div className="space-y-6">
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <CardTitle className="flex items-center gap-2">
                   <Ticket className="h-5 w-5 text-blue-400" />
                   Codes d'Accès Invités
                 </CardTitle>
-                <Button className="bg-blue-500 hover:bg-blue-600">
+                <Button 
+                  className="bg-blue-500 hover:bg-blue-600 focus:ring-2 focus:ring-blue-500"
+                  onClick={handleCreateVoucher}
+                >
                   <Plus className="h-4 w-4 mr-2" />
                   Créer un Code
                 </Button>
@@ -221,10 +339,10 @@ export function AdminPanel({ user }: AdminPanelProps) {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {vouchers.map((voucher) => (
-                  <div key={voucher.code} className="flex items-center justify-between p-4 rounded-lg bg-gray-800/50 border border-gray-700">
+                {filteredData(vouchers).map((voucher) => (
+                  <div key={voucher.code} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-lg bg-gray-800/50 border border-gray-700">
                     <div className="flex-1">
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 mb-2">
                         <code className="text-lg font-mono text-blue-300 bg-gray-900 px-3 py-1 rounded">
                           {voucher.code}
                         </code>
@@ -232,15 +350,38 @@ export function AdminPanel({ user }: AdminPanelProps) {
                           {voucher.status}
                         </Badge>
                       </div>
-                      <div className="flex gap-4 mt-2 text-xs text-gray-500">
+                      <div className="flex flex-wrap gap-4 text-xs text-gray-500">
                         <span>Créé: {voucher.created}</span>
                         <span>Expire: {voucher.expires}</span>
                         <span>{voucher.used ? 'Utilisé' : 'Non utilisé'}</span>
                       </div>
                     </div>
-                    <Button variant="ghost" size="icon">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" aria-label="Actions">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => handleVoucherAction('view', voucher.code)}>
+                          <Eye className="h-4 w-4 mr-2" />
+                          Voir les détails
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleVoucherAction('copy', voucher.code)}>
+                          <Database className="h-4 w-4 mr-2" />
+                          Copier le code
+                        </DropdownMenuItem>
+                        {voucher.status === 'ACTIVE' && (
+                          <DropdownMenuItem 
+                            onClick={() => handleVoucherAction('revoke', voucher.code)}
+                            className="text-red-400"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Révoquer
+                          </DropdownMenuItem>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 ))}
               </div>
@@ -256,28 +397,49 @@ export function AdminPanel({ user }: AdminPanelProps) {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Activity className="h-5 w-5 text-green-400" />
-                Sessions Actives ({activeSessions.length})
+                Sessions Actives ({filteredData(activeSessions).length})
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {activeSessions.map((session) => (
-                  <div key={session.id} className="flex items-center justify-between p-4 rounded-lg bg-gray-800/50 border border-gray-700">
+                {filteredData(activeSessions).map((session) => (
+                  <div key={session.id} className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-4 rounded-lg bg-gray-800/50 border border-gray-700">
                     <div className="flex-1">
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 mb-2">
                         <div>
                           <p className="font-medium text-white">{session.user}</p>
                           <p className="text-sm text-gray-400">IP: {session.ip} • MAC: {session.mac}</p>
                         </div>
                       </div>
-                      <div className="flex gap-4 mt-2 text-xs text-gray-500">
-                        <span><Clock className="inline h-3 w-3 mr-1" />{session.duration}</span>
-                        <span><Database className="inline h-3 w-3 mr-1" />{session.data}</span>
+                      <div className="flex flex-wrap gap-4 text-xs text-gray-500">
+                        <span className="flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          {session.duration}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Database className="h-3 w-3" />
+                          {session.data}
+                        </span>
                       </div>
                     </div>
-                    <Button variant="destructive" size="sm">
-                      Déconnecter
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleSessionAction('view', session.id, session.user)}
+                      >
+                        <Eye className="h-4 w-4 mr-1" />
+                        <span className="hidden sm:inline">Détails</span>
+                      </Button>
+                      <Button 
+                        variant="destructive" 
+                        size="sm"
+                        onClick={() => handleSessionAction('terminate', session.id, session.user)}
+                      >
+                        <UserX className="h-4 w-4 mr-1" />
+                        <span className="hidden sm:inline">Déconnecter</span>
+                      </Button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -301,14 +463,14 @@ export function AdminPanel({ user }: AdminPanelProps) {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {auditLogs.map((log) => (
-                  <div key={log.id} className="flex items-center justify-between p-4 rounded-lg bg-gray-800/50 border border-gray-700">
+                {filteredData(auditLogs).map((log) => (
+                  <div key={log.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-lg bg-gray-800/50 border border-gray-700">
                     <div className="flex-1">
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 mb-2">
                         <Badge variant="outline">{log.action}</Badge>
                         <span className="text-sm text-white">{log.target}</span>
                       </div>
-                      <div className="flex gap-4 mt-2 text-xs text-gray-500">
+                      <div className="flex flex-wrap gap-4 text-xs text-gray-500">
                         <span>Par: {log.actor}</span>
                         <span>À: {log.time}</span>
                         <Badge variant="success" className="text-xs">
@@ -316,6 +478,14 @@ export function AdminPanel({ user }: AdminPanelProps) {
                         </Badge>
                       </div>
                     </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => toast.success(`Détails du log ${log.id}`)}
+                    >
+                      <Eye className="h-4 w-4 mr-1" />
+                      <span className="hidden sm:inline">Détails</span>
+                    </Button>
                   </div>
                 ))}
               </div>

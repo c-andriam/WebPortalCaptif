@@ -1,5 +1,5 @@
-import React, { useState } from 'react'
-import { BrowserRouter as Router, Routes, Route, Navigate, useSearchParams } from 'react-router-dom'
+import React, { useState, useEffect } from 'react'
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './hooks/useAuth'
 import { NotificationsProvider } from './hooks/useNotifications'
 import { PortalLogin } from './components/portal/PortalLogin'
@@ -25,6 +25,7 @@ import { QuotaManager } from './components/admin/QuotaManager'
 import { DeviceManager } from './components/subscriber/DeviceManager'
 import { UsageStats } from './components/subscriber/UsageStats'
 import { SystemMetrics } from './components/monitoring/SystemMetrics'
+import { Toaster } from 'react-hot-toast'
 import { 
   mockPlans, 
   mockDevices, 
@@ -36,23 +37,24 @@ import {
 } from './lib/mockData'
 
 function AppContent() {
-  const [searchParams] = useSearchParams()
+  const location = useLocation()
+  const navigate = useNavigate()
   const { user, loading, error, login, voucherLogin, register, logout, clearError } = useAuth()
-  const [currentView, setCurrentView] = useState<'welcome' | 'login' | 'register' | 'dashboard' | 'portal' | 'session'>(() => {
-    // Check if this is a captive portal redirect
-    const mac = searchParams.get('mac')
-    const ip = searchParams.get('ip')
-    if (mac && ip) {
-      return 'portal'
+  
+  // Check if this is a captive portal redirect
+  const isPortalAccess = location.search.includes('mac=') && location.search.includes('ip=')
+
+  useEffect(() => {
+    // Handle portal redirects
+    if (isPortalAccess && !user) {
+      navigate('/portal', { replace: true })
     }
-    return 'welcome'
-  })
-  const [sessionData, setSessionData] = useState(mockSessionData)
+  }, [isPortalAccess, user, navigate])
 
   const handleLogin = async (email: string, password: string) => {
     try {
       await login(email, password)
-      setCurrentView('dashboard')
+      navigate('/dashboard', { replace: true })
     } catch (error) {
       // Error is handled by the auth context
     }
@@ -61,8 +63,7 @@ function AppContent() {
   const handleVoucherLogin = async (code: string) => {
     try {
       await voucherLogin(code)
-      // For guest users, show session status instead of dashboard
-      setCurrentView('session')
+      navigate('/session', { replace: true })
     } catch (error) {
       // Error is handled by the auth context
     }
@@ -79,8 +80,7 @@ function AppContent() {
   }) => {
     try {
       await register(userData)
-      setCurrentView('login')
-      // Show success message here in production
+      navigate('/login?registered=true', { replace: true })
     } catch (error) {
       // Error is handled by the auth context
     }
@@ -88,30 +88,7 @@ function AppContent() {
 
   const handleLogout = async () => {
     await logout()
-    setCurrentView('welcome')
-  }
-
-  const handlePortalLogin = async (email: string, password: string) => {
-    try {
-      await login(email, password)
-      setCurrentView('session')
-    } catch (error) {
-      // Error handled by auth context
-    }
-  }
-
-  const handlePortalVoucherLogin = async (code: string) => {
-    try {
-      await voucherLogin(code)
-      setCurrentView('session')
-    } catch (error) {
-      // Error handled by auth context
-    }
-  }
-
-  const handleSessionLogout = () => {
-    logout()
-    setCurrentView('welcome')
+    navigate('/', { replace: true })
   }
 
   // Show loading state
@@ -126,85 +103,109 @@ function AppContent() {
     )
   }
 
-  // Show session status for guest users or portal access
-  if ((user && user.role === 'GUEST') || currentView === 'session') {
-    return (
-      <SessionStatus 
-        sessionData={sessionData}
-        onLogout={handleSessionLogout}
-        onExtendSession={() => {
-          // Mock extend session
-          console.log('Extending session...')
-        }}
-      />
-    )
-  }
+  return (
+    <Routes>
+      {/* Public routes */}
+      <Route path="/" element={<WelcomePage onGetStarted={() => navigate('/login')} />} />
+      <Route path="/portal" element={
+        <PortalLogin
+          onVoucherLogin={handleVoucherLogin}
+          onCredentialsLogin={handleLogin}
+          onRegister={() => navigate('/register')}
+          loading={loading}
+          error={error}
+        />
+      } />
+      <Route path="/login" element={
+        user ? <Navigate to="/dashboard" replace /> : (
+          <LoginForm
+            onLogin={handleLogin}
+            onVoucherLogin={handleVoucherLogin}
+            onRegister={() => navigate('/register')}
+            onForgotPassword={() => navigate('/forgot-password')}
+            onBack={() => navigate('/')}
+            loading={loading}
+            error={error}
+          />
+        )
+      } />
+      <Route path="/register" element={
+        user ? <Navigate to="/dashboard" replace /> : (
+          <RegisterForm
+            onRegister={handleRegister}
+            onBack={() => navigate('/login')}
+            loading={loading}
+            error={error}
+          />
+        )
+      } />
 
-  // Show portal login for captive portal access
-  if (currentView === 'portal') {
-    return (
-      <PortalLogin
-        onVoucherLogin={handlePortalVoucherLogin}
-        onCredentialsLogin={handlePortalLogin}
-        onRegister={() => setCurrentView('register')}
-        loading={loading}
-        error={error}
-      />
-    )
-  }
+      {/* Session status for guests */}
+      <Route path="/session" element={
+        <SessionStatus 
+          sessionData={mockSessionData}
+          onLogout={handleLogout}
+          onExtendSession={() => {
+            console.log('Extending session...')
+          }}
+        />
+      } />
 
-  // Show dashboard if user is authenticated
-  if (user && currentView === 'dashboard') {
-    return (
-      <Routes>
-        <Route path="/" element={<MainLayout />}>
-          <Route index element={<Navigate to="/dashboard" replace />} />
-          <Route path="dashboard" element={
+      {/* Protected routes */}
+      <Route path="/*" element={
+        user ? <MainLayout /> : <Navigate to="/login" replace />
+      }>
+        <Route index element={<Navigate to="/dashboard" replace />} />
+        <Route path="dashboard" element={<Dashboard user={user!} />} />
+        <Route path="profile" element={<ProfileSettings />} />
+        <Route path="timeline" element={<Timeline />} />
+        <Route path="calendar" element={<Calendar />} />
+        <Route path="tasks" element={<TaskBoard />} />
+        <Route path="files" element={<FileManager />} />
+        <Route path="notes" element={<NotesManager />} />
+        <Route path="contacts" element={<ContactsManager />} />
+        
+        {/* Subscriber routes */}
+        <Route path="devices" element={
+          user?.role === 'SUBSCRIBER' ? (
+            <DeviceManager 
+              devices={mockDevices}
+              maxDevices={5}
+              onAddDevice={async (device) => console.log('Add device:', device)}
+              onUpdateDevice={async (id, data) => console.log('Update device:', id, data)}
+              onRemoveDevice={async (id) => console.log('Remove device:', id)}
+            />
+          ) : <Navigate to="/dashboard" replace />
+        } />
+        <Route path="usage" element={
+          user?.role === 'SUBSCRIBER' ? (
+            <UsageStats 
+              usage={mockUsageData}
+              onRenewSubscription={() => console.log('Renew subscription')}
+              onUpgradePlan={() => console.log('Upgrade plan')}
+            />
+          ) : <Navigate to="/dashboard" replace />
+        } />
+        <Route path="sessions" element={
+          user?.role === 'SUBSCRIBER' ? (
             <div className="p-6">
-              <div className="mb-8">
-                <h1 className="text-3xl font-bold text-white mb-2">
-                  Tableau de Bord {user.role === 'SUPERADMIN' ? 'Super Administrateur' : user.role === 'ADMIN' ? 'Administrateur' : user.role === 'SUBSCRIBER' ? 'Abonné' : 'Invité'}
-                </h1>
-                <p className="text-gray-400">
-                  {user.role === 'ADMIN' || user.role === 'SUPERADMIN' ? 'Gérez les accès et surveillez l\'activité réseau' : user.role === 'SUBSCRIBER' ? 'Gérez vos appareils et consultez votre usage' : 'Votre session internet est maintenant active'}
-                </p>
-              </div>
-              <DashboardStats userRole={user.role} />
+              <h1 className="text-3xl font-bold text-white mb-6">Mes Sessions</h1>
+              <p className="text-gray-400">Historique de vos connexions</p>
             </div>
-          } />
-          <Route path="profile" element={<div className="p-6"><ProfileSettings /></div>} />
-          <Route path="devices" element={
-            <div className="p-6">
-              <DeviceManager 
-                devices={mockDevices}
-                maxDevices={5}
-                onAddDevice={async (device) => console.log('Add device:', device)}
-                onUpdateDevice={async (id, data) => console.log('Update device:', id, data)}
-                onRemoveDevice={async (id) => console.log('Remove device:', id)}
-              />
-            </div>
-          } />
-          <Route path="usage" element={
-            <div className="p-6">
-              <UsageStats 
-                usage={mockUsageData}
-                onRenewSubscription={() => console.log('Renew subscription')}
-                onUpgradePlan={() => console.log('Upgrade plan')}
-              />
-            </div>
-          } />
-          <Route path="timeline" element={<div className="p-6"><Timeline /></div>} />
-          <Route path="calendar" element={<div className="p-6"><Calendar /></div>} />
-          <Route path="tasks" element={<div className="p-6"><TaskBoard /></div>} />
-          <Route path="files" element={<div className="p-6"><FileManager /></div>} />
-          <Route path="notes" element={<div className="p-6"><NotesManager /></div>} />
-          <Route path="contacts" element={<div className="p-6"><ContactsManager /></div>} />
-          <Route path="users" element={<div className="p-6"><AdminPanel user={user} /></div>} />
-          <Route path="validation" element={
+          ) : <Navigate to="/dashboard" replace />
+        } />
+
+        {/* Admin routes */}
+        <Route path="users" element={
+          (user?.role === 'ADMIN' || user?.role === 'SUPERADMIN') ? (
+            <AdminPanel user={user} />
+          ) : <Navigate to="/dashboard" replace />
+        } />
+        <Route path="validation" element={
+          (user?.role === 'ADMIN' || user?.role === 'SUPERADMIN') ? (
             <div className="p-6">
               <div className="space-y-6">
                 <h1 className="text-3xl font-bold text-white">Validation des Comptes</h1>
-                {/* Mock pending user for demo */}
                 <UserValidation
                   user={{
                     id: 999,
@@ -224,14 +225,15 @@ function AppContent() {
                 />
               </div>
             </div>
-          } />
-          <Route path="voucher-generator" element={
+          ) : <Navigate to="/dashboard" replace />
+        } />
+        <Route path="voucher-generator" element={
+          (user?.role === 'ADMIN' || user?.role === 'SUPERADMIN') ? (
             <div className="p-6">
               <VoucherGenerator
                 plans={mockPlans}
                 onGenerate={async (data) => {
                   console.log('Generate vouchers:', data)
-                  // Mock generated vouchers
                   return Array.from({ length: data.quantity }, (_, i) => ({
                     code: `TEST${String(i + 1).padStart(4, '0')}`,
                     id: i + 1,
@@ -243,8 +245,10 @@ function AppContent() {
                 }}
               />
             </div>
-          } />
-          <Route path="session-monitor" element={
+          ) : <Navigate to="/dashboard" replace />
+        } />
+        <Route path="session-monitor" element={
+          (user?.role === 'ADMIN' || user?.role === 'SUPERADMIN') ? (
             <div className="p-6">
               <SessionMonitor
                 sessions={mockActiveSessions}
@@ -252,8 +256,10 @@ function AppContent() {
                 onRefresh={() => console.log('Refresh sessions')}
               />
             </div>
-          } />
-          <Route path="quota-manager" element={
+          ) : <Navigate to="/dashboard" replace />
+        } />
+        <Route path="quota-manager" element={
+          (user?.role === 'ADMIN' || user?.role === 'SUPERADMIN') ? (
             <div className="p-6">
               <QuotaManager
                 userQuotas={mockUserQuotas}
@@ -261,8 +267,17 @@ function AppContent() {
                 onSuspendUser={async (userId, reason) => console.log('Suspend user:', userId, reason)}
               />
             </div>
-          } />
-          <Route path="system-metrics" element={
+          ) : <Navigate to="/dashboard" replace />
+        } />
+        <Route path="vouchers" element={
+          (user?.role === 'ADMIN' || user?.role === 'SUPERADMIN') ? (
+            <AdminPanel user={user} />
+          ) : <Navigate to="/dashboard" replace />
+        } />
+
+        {/* SuperAdmin only routes */}
+        <Route path="system-metrics" element={
+          user?.role === 'SUPERADMIN' ? (
             <div className="p-6">
               <SystemMetrics
                 metrics={mockSystemMetrics}
@@ -270,52 +285,29 @@ function AppContent() {
                 onExportMetrics={() => console.log('Export metrics')}
               />
             </div>
-          } />
-          <Route path="vouchers" element={<div className="p-6"><AdminPanel user={user} /></div>} />
-          <Route path="sessions" element={<div className="p-6"><AdminPanel user={user} /></div>} />
-          <Route path="config" element={<div className="p-6"><AdminPanel user={user} /></div>} />
-          <Route path="audit" element={<div className="p-6"><AdminPanel user={user} /></div>} />
-        </Route>
-      </Routes>
-    )
-  }
+          ) : <Navigate to="/dashboard" replace />
+        } />
+        <Route path="config" element={
+          user?.role === 'SUPERADMIN' ? (
+            <div className="p-6">
+              <h1 className="text-3xl font-bold text-white mb-6">Configuration Système</h1>
+              <p className="text-gray-400">Paramètres système (SuperAdmin uniquement)</p>
+            </div>
+          ) : <Navigate to="/dashboard" replace />
+        } />
+        <Route path="audit" element={
+          user?.role === 'SUPERADMIN' ? (
+            <div className="p-6">
+              <h1 className="text-3xl font-bold text-white mb-6">Logs d'Audit</h1>
+              <p className="text-gray-400">Historique immuable des actions (SuperAdmin uniquement)</p>
+            </div>
+          ) : <Navigate to="/dashboard" replace />
+        } />
+      </Route>
 
-  // Show welcome page
-  if (currentView === 'welcome') {
-    return <WelcomePage onGetStarted={() => setCurrentView('login')} />
-  }
-
-  // Show authentication forms
-  if (currentView === 'register') {
-    return (
-      <RegisterForm
-        onRegister={handleRegister}
-        onBack={() => {
-          setCurrentView('login')
-          clearError()
-        }}
-        loading={loading}
-        error={error}
-      />
-    )
-  }
-
-  return (
-    <LoginForm
-      onLogin={handleLogin}
-      onVoucherLogin={handleVoucherLogin}
-      onRegister={() => {
-        setCurrentView('register')
-        clearError()
-      }}
-      onForgotPassword={() => {
-        // TODO: Implement forgot password flow
-        console.log('Forgot password clicked')
-      }}
-      onBack={() => setCurrentView('welcome')}
-      loading={loading}
-      error={error}
-    />
+      {/* Catch all route */}
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   )
 }
 
@@ -325,6 +317,29 @@ function App() {
       <AuthProvider>
         <NotificationsProvider>
           <AppContent />
+          <Toaster 
+            position="top-right"
+            toastOptions={{
+              duration: 4000,
+              style: {
+                background: '#1f2937',
+                color: '#f9fafb',
+                border: '1px solid #374151',
+              },
+              success: {
+                iconTheme: {
+                  primary: '#10b981',
+                  secondary: '#f9fafb',
+                },
+              },
+              error: {
+                iconTheme: {
+                  primary: '#ef4444',
+                  secondary: '#f9fafb',
+                },
+              },
+            }}
+          />
         </NotificationsProvider>
       </AuthProvider>
     </Router>

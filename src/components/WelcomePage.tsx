@@ -1,15 +1,24 @@
 import React from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Shield, Wifi, Users, Clock, Database, CheckCircle, ArrowRight } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card'
 import { Button } from './ui/button'
 import { Badge } from './ui/badge'
 import { DemoCredentials } from './DemoCredentials'
+import toast from 'react-hot-toast'
 
-interface WelcomePageProps {
-  onGetStarted: () => void
-}
+export function WelcomePage() {
+  const navigate = useNavigate()
 
-export function WelcomePage({ onGetStarted }: WelcomePageProps) {
+  const handleGetStarted = () => {
+    navigate('/login')
+    toast.success('Redirection vers la connexion')
+  }
+
+  const handleDocumentation = () => {
+    toast.success('Documentation en cours de développement')
+  }
+
   const features = [
     {
       icon: Shield,
@@ -77,18 +86,18 @@ export function WelcomePage({ onGetStarted }: WelcomePageProps) {
             <div className="inline-flex items-center justify-center w-20 h-20 bg-blue-500 rounded-2xl mb-8">
               <Shield className="w-10 h-10 text-white" />
             </div>
-            <h1 className="text-5xl font-bold text-white mb-6">
+            <h1 className="text-4xl sm:text-5xl font-bold text-white mb-6">
               CaptiveNet
             </h1>
-            <p className="text-xl text-gray-300 mb-8 leading-relaxed">
+            <p className="text-lg sm:text-xl text-gray-300 mb-8 leading-relaxed">
               Plateforme de gestion d'accès Internet via portail captif pour entreprises.
               Contrôle granulaire, sécurité renforcée, et monitoring temps réel.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button 
                 size="lg" 
-                className="bg-blue-500 hover:bg-blue-600 text-white px-8"
-                onClick={onGetStarted}
+                className="bg-blue-500 hover:bg-blue-600 text-white px-8 focus:ring-2 focus:ring-blue-500"
+                onClick={handleGetStarted}
               >
                 Commencer la Démo
                 <ArrowRight className="ml-2 h-5 w-5" />
@@ -96,7 +105,8 @@ export function WelcomePage({ onGetStarted }: WelcomePageProps) {
               <Button 
                 size="lg" 
                 variant="outline" 
-                className="border-gray-600 text-white hover:bg-gray-800"
+                className="border-gray-600 text-white hover:bg-gray-800 focus:ring-2 focus:ring-blue-500"
+                onClick={handleDocumentation}
               >
                 Documentation
               </Button>
@@ -108,7 +118,7 @@ export function WelcomePage({ onGetStarted }: WelcomePageProps) {
       {/* Features Section */}
       <div className="container mx-auto px-4 py-16">
         <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold text-white mb-4">
+          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">
             Fonctionnalités Avancées
           </h2>
           <p className="text-gray-400 max-w-2xl mx-auto">
@@ -116,9 +126,9 @@ export function WelcomePage({ onGetStarted }: WelcomePageProps) {
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
           {features.map((feature, index) => (
-            <Card key={index} className="border-gray-800 bg-gray-950/50 backdrop-blur">
+            <Card key={index} className="border-gray-800 bg-gray-950/50 backdrop-blur hover:bg-gray-900/50 transition-colors">
               <CardHeader>
                 <div className="flex items-center gap-3">
                   <div className="p-2 rounded-lg bg-blue-500/10">
@@ -138,7 +148,7 @@ export function WelcomePage({ onGetStarted }: WelcomePageProps) {
 
         {/* Plans Section */}
         <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold text-white mb-4">
+          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">
             Plans d'Abonnement
           </h2>
           <p className="text-gray-400 max-w-2xl mx-auto">
@@ -146,9 +156,9 @@ export function WelcomePage({ onGetStarted }: WelcomePageProps) {
           </p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-6 mb-16">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
           {plans.map((plan, index) => (
-            <Card key={index} className={`border-gray-800 bg-gray-950/50 backdrop-blur relative ${plan.popular ? 'border-blue-500' : ''}`}>
+            <Card key={index} className={`border-gray-800 bg-gray-950/50 backdrop-blur relative hover:bg-gray-900/50 transition-colors ${plan.popular ? 'border-blue-500' : ''}`}>
               {plan.popular && (
                 <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
                   <Badge className="bg-blue-500 text-white">Populaire</Badge>
@@ -157,7 +167,7 @@ export function WelcomePage({ onGetStarted }: WelcomePageProps) {
               <CardHeader className="text-center">
                 <CardTitle className="text-xl">{plan.name}</CardTitle>
                 <div className="flex items-baseline justify-center gap-1">
-                  <span className="text-3xl font-bold text-white">{plan.price}</span>
+                  <span className="text-2xl sm:text-3xl font-bold text-white">{plan.price}</span>
                   <span className="text-gray-400">{plan.period}</span>
                 </div>
               </CardHeader>
@@ -171,8 +181,8 @@ export function WelcomePage({ onGetStarted }: WelcomePageProps) {
                   ))}
                 </ul>
                 <Button 
-                  className={`w-full mt-6 ${plan.popular ? 'bg-blue-500 hover:bg-blue-600' : 'bg-gray-800 hover:bg-gray-700'}`}
-                  onClick={onGetStarted}
+                  className={`w-full mt-6 focus:ring-2 focus:ring-blue-500 ${plan.popular ? 'bg-blue-500 hover:bg-blue-600' : 'bg-gray-800 hover:bg-gray-700'}`}
+                  onClick={handleGetStarted}
                 >
                   Choisir ce Plan
                 </Button>
@@ -184,7 +194,7 @@ export function WelcomePage({ onGetStarted }: WelcomePageProps) {
         {/* Demo Credentials */}
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold text-white mb-4">
+            <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">
               Testez la Plateforme
             </h2>
             <p className="text-gray-400">
@@ -203,10 +213,25 @@ export function WelcomePage({ onGetStarted }: WelcomePageProps) {
               <Shield className="h-6 w-6 text-blue-400" />
               <span className="text-white font-semibold">CaptiveNet</span>
             </div>
-            <div className="flex gap-6 text-sm text-gray-400">
-              <a href="#" className="hover:text-white transition-colors">Conditions d'utilisation</a>
-              <a href="#" className="hover:text-white transition-colors">Politique de confidentialité</a>
-              <a href="#" className="hover:text-white transition-colors">Support</a>
+            <div className="flex flex-wrap gap-4 sm:gap-6 text-sm text-gray-400 justify-center">
+              <button 
+                onClick={() => toast.success('CGU en cours de développement')}
+                className="hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
+              >
+                Conditions d'utilisation
+              </button>
+              <button 
+                onClick={() => toast.success('Politique de confidentialité en cours de développement')}
+                className="hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
+              >
+                Politique de confidentialité
+              </button>
+              <button 
+                onClick={() => toast.success('Support: support@captivenet.com')}
+                className="hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
+              >
+                Support
+              </button>
             </div>
           </div>
         </div>

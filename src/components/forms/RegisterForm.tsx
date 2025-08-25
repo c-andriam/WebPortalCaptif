@@ -7,8 +7,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { useToast } from '@/components/ui/use-toast'
 import { registerSchema, type RegisterFormData } from '@/lib/validations'
+import toast from 'react-hot-toast'
 
 interface RegisterFormProps {
   onRegister: (userData: RegisterFormData) => Promise<void>
@@ -19,9 +19,9 @@ interface RegisterFormProps {
 
 export function RegisterForm({ onRegister, onBack, loading, error }: RegisterFormProps) {
   const { t } = useTranslation()
-  const { toast } = useToast()
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [termsAccepted, setTermsAccepted] = useState(false)
 
   const form = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
@@ -56,26 +56,31 @@ export function RegisterForm({ onRegister, onBack, loading, error }: RegisterFor
   }
 
   const getStrengthText = (strength: number) => {
-    if (strength < 2) return t('Weak')
-    if (strength < 4) return t('Medium')
-    return t('Strong')
+    if (strength < 2) return 'Faible'
+    if (strength < 4) return 'Moyen'
+    return 'Fort'
   }
 
   const handleSubmit = async (data: RegisterFormData) => {
+    if (!termsAccepted) {
+      toast.error('Vous devez accepter les conditions d\'utilisation')
+      return
+    }
+
     try {
       await onRegister(data)
-      toast({
-        title: t('Registration successful'),
-        description: t('Your account has been created and is pending validation'),
-        variant: 'success',
-      })
+      toast.success('Inscription réussie ! Votre compte est en attente de validation.')
     } catch (error) {
-      toast({
-        title: t('Registration failed'),
-        description: error instanceof Error ? error.message : t('An error occurred'),
-        variant: 'destructive',
-      })
+      toast.error(error instanceof Error ? error.message : 'Erreur lors de l\'inscription')
     }
+  }
+
+  const handleTermsClick = () => {
+    toast.success('CGU en cours de développement')
+  }
+
+  const handlePrivacyClick = () => {
+    toast.success('Politique de confidentialité en cours de développement')
   }
 
   return (
@@ -89,19 +94,19 @@ export function RegisterForm({ onRegister, onBack, loading, error }: RegisterFor
                 size="icon" 
                 onClick={onBack}
                 className="text-gray-400 hover:text-white focus:ring-2 focus:ring-blue-500"
-                aria-label={t('common.back')}
+                aria-label="Retour"
               >
                 <ArrowLeft className="h-4 w-4" />
               </Button>
-              <CardTitle>{t('Create subscriber account')}</CardTitle>
+              <CardTitle>Créer un compte abonné</CardTitle>
             </div>
           </CardHeader>
 
           <CardContent>
             <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="first_name">{t('First name')}</Label>
+                  <Label htmlFor="first_name">Prénom</Label>
                   <div className="relative">
                     <User className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
                     <Input
@@ -115,13 +120,13 @@ export function RegisterForm({ onRegister, onBack, loading, error }: RegisterFor
                   </div>
                   {form.formState.errors.first_name && (
                     <p id="first-name-error" className="text-sm text-red-400" role="alert">
-                      {t(form.formState.errors.first_name.message!)}
+                      {form.formState.errors.first_name.message}
                     </p>
                   )}
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="last_name">{t('Last name')}</Label>
+                  <Label htmlFor="last_name">Nom</Label>
                   <Input
                     id="last_name"
                     placeholder="Dupont"
@@ -131,14 +136,14 @@ export function RegisterForm({ onRegister, onBack, loading, error }: RegisterFor
                   />
                   {form.formState.errors.last_name && (
                     <p id="last-name-error" className="text-sm text-red-400" role="alert">
-                      {t(form.formState.errors.last_name.message!)}
+                      {form.formState.errors.last_name.message}
                     </p>
                   )}
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="username">{t('Username')}</Label>
+                <Label htmlFor="username">Nom d'utilisateur</Label>
                 <Input
                   id="username"
                   placeholder="jean.dupont"
@@ -148,13 +153,13 @@ export function RegisterForm({ onRegister, onBack, loading, error }: RegisterFor
                 />
                 {form.formState.errors.username && (
                   <p id="username-error" className="text-sm text-red-400" role="alert">
-                    {t(form.formState.errors.username.message!)}
+                    {form.formState.errors.username.message}
                   </p>
                 )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="email">{t('auth.email')}</Label>
+                <Label htmlFor="email">Adresse e-mail</Label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
                   <Input
@@ -169,13 +174,13 @@ export function RegisterForm({ onRegister, onBack, loading, error }: RegisterFor
                 </div>
                 {form.formState.errors.email && (
                   <p id="email-error" className="text-sm text-red-400" role="alert">
-                    {t(form.formState.errors.email.message!)}
+                    {form.formState.errors.email.message}
                   </p>
                 )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="phone">{t('Phone (optional)')}</Label>
+                <Label htmlFor="phone">Téléphone (optionnel)</Label>
                 <div className="relative">
                   <Phone className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
                   <Input
@@ -190,13 +195,13 @@ export function RegisterForm({ onRegister, onBack, loading, error }: RegisterFor
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password">{t('auth.password')}</Label>
+                <Label htmlFor="password">Mot de passe</Label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
                   <Input
                     id="password"
                     type={showPassword ? 'text' : 'password'}
-                    placeholder={t('Minimum 12 characters')}
+                    placeholder="Minimum 12 caractères"
                     className="pl-10 pr-10"
                     disabled={loading}
                     {...form.register('password')}
@@ -206,7 +211,7 @@ export function RegisterForm({ onRegister, onBack, loading, error }: RegisterFor
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-2.5 text-gray-400 hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
-                    aria-label={showPassword ? t('Hide password') : t('Show password')}
+                    aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
                     disabled={loading}
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -226,16 +231,16 @@ export function RegisterForm({ onRegister, onBack, loading, error }: RegisterFor
                     </div>
                     <div id="password-help" className="text-xs text-gray-500 space-y-1">
                       <p className={password.length >= 12 ? 'text-green-400' : ''}>
-                        • {t('Minimum 12 characters')}
+                        • Minimum 12 caractères
                       </p>
                       <p className={/[a-z]/.test(password) && /[A-Z]/.test(password) ? 'text-green-400' : ''}>
-                        • {t('Uppercase and lowercase letters')}
+                        • Lettres majuscules et minuscules
                       </p>
                       <p className={/\d/.test(password) ? 'text-green-400' : ''}>
-                        • {t('At least one number')}
+                        • Au moins un chiffre
                       </p>
                       <p className={/[!@#$%^&*]/.test(password) ? 'text-green-400' : ''}>
-                        • {t('At least one special character')}
+                        • Au moins un caractère spécial
                       </p>
                     </div>
                   </div>
@@ -243,19 +248,19 @@ export function RegisterForm({ onRegister, onBack, loading, error }: RegisterFor
                 
                 {form.formState.errors.password && (
                   <p id="password-error" className="text-sm text-red-400" role="alert">
-                    {t(form.formState.errors.password.message!)}
+                    {form.formState.errors.password.message}
                   </p>
                 )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password_confirm">{t('auth.confirmPassword')}</Label>
+                <Label htmlFor="password_confirm">Confirmer le mot de passe</Label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
                   <Input
                     id="password_confirm"
                     type={showConfirmPassword ? 'text' : 'password'}
-                    placeholder={t('Confirm your password')}
+                    placeholder="Confirmez votre mot de passe"
                     className="pl-10 pr-10"
                     disabled={loading}
                     {...form.register('password_confirm')}
@@ -265,7 +270,7 @@ export function RegisterForm({ onRegister, onBack, loading, error }: RegisterFor
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                     className="absolute right-3 top-2.5 text-gray-400 hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
-                    aria-label={showConfirmPassword ? t('Hide password') : t('Show password')}
+                    aria-label={showConfirmPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
                     disabled={loading}
                   >
                     {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -273,7 +278,7 @@ export function RegisterForm({ onRegister, onBack, loading, error }: RegisterFor
                 </div>
                 {form.formState.errors.password_confirm && (
                   <p id="confirm-password-error" className="text-sm text-red-400" role="alert">
-                    {t(form.formState.errors.password_confirm.message!)}
+                    {form.formState.errors.password_confirm.message}
                   </p>
                 )}
               </div>
@@ -282,34 +287,43 @@ export function RegisterForm({ onRegister, onBack, loading, error }: RegisterFor
                 <input 
                   type="checkbox" 
                   id="terms" 
-                  required 
+                  checked={termsAccepted}
+                  onChange={(e) => setTermsAccepted(e.target.checked)}
                   className="mt-1 accent-blue-500 focus:ring-2 focus:ring-blue-500"
                   disabled={loading}
                 />
                 <label htmlFor="terms" className="text-xs text-gray-400">
-                  {t('I accept the')}{' '}
-                  <a href="#" className="text-blue-400 hover:text-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded">
-                    {t('Terms of Service')}
-                  </a>{' '}
-                  {t('and the')}{' '}
-                  <a href="#" className="text-blue-400 hover:text-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded">
-                    {t('Privacy Policy')}
-                  </a>
+                  J'accepte les{' '}
+                  <button 
+                    type="button"
+                    onClick={handleTermsClick}
+                    className="text-blue-400 hover:text-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded underline"
+                  >
+                    Conditions d'Utilisation
+                  </button>{' '}
+                  et la{' '}
+                  <button 
+                    type="button"
+                    onClick={handlePrivacyClick}
+                    className="text-blue-400 hover:text-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded underline"
+                  >
+                    Politique de Confidentialité
+                  </button>
                 </label>
               </div>
 
               <Button 
                 type="submit" 
                 className="w-full bg-blue-500 hover:bg-blue-600 focus:ring-2 focus:ring-blue-500" 
-                disabled={loading || passwordStrength < 3}
+                disabled={loading || passwordStrength < 3 || !termsAccepted}
               >
-                {loading ? t('common.loading') : t('Create my account')}
+                {loading ? 'Création...' : 'Créer mon compte'}
               </Button>
             </form>
 
             <div className="mt-6 p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
               <p className="text-xs text-blue-300 text-center">
-                <strong>{t('Validation required')}:</strong> {t('Your account must be validated by an administrator before you can access the internet')}.
+                <strong>Validation requise :</strong> Votre compte doit être validé par un administrateur avant de pouvoir accéder à Internet.
               </p>
             </div>
           </CardContent>

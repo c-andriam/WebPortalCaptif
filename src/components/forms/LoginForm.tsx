@@ -2,13 +2,14 @@ import React, { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router-dom'
 import { Eye, EyeOff, Mail, Lock, Wifi, ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { useToast } from '@/components/ui/use-toast'
 import { loginSchema, voucherLoginSchema, type LoginFormData, type VoucherLoginFormData } from '@/lib/validations'
+import toast from 'react-hot-toast'
 
 interface LoginFormProps {
   onLogin: (email: string, password: string) => Promise<void>
@@ -30,7 +31,7 @@ export function LoginForm({
   error 
 }: LoginFormProps) {
   const { t } = useTranslation()
-  const { toast } = useToast()
+  const navigate = useNavigate()
   const [loginMode, setLoginMode] = useState<'account' | 'voucher'>('account')
   const [showPassword, setShowPassword] = useState(false)
   const [attemptCount, setAttemptCount] = useState(0)
@@ -53,37 +54,40 @@ export function LoginForm({
   const handleAccountSubmit = async (data: LoginFormData) => {
     try {
       await onLogin(data.email, data.password)
-      toast({
-        title: t('auth.loginSuccess'),
-        description: t('Welcome back!'),
-        variant: 'success',
-      })
+      toast.success('Connexion réussie !')
     } catch (error) {
       setAttemptCount(prev => prev + 1)
-      toast({
-        title: t('auth.loginError'),
-        description: error instanceof Error ? error.message : t('auth.invalidCredentials'),
-        variant: 'destructive',
-      })
+      toast.error(error instanceof Error ? error.message : 'Identifiants invalides')
     }
   }
 
   const handleVoucherSubmit = async (data: VoucherLoginFormData) => {
     try {
       await onVoucherLogin(data.code)
-      toast({
-        title: t('auth.loginSuccess'),
-        description: t('Guest access granted'),
-        variant: 'success',
-      })
+      toast.success('Accès invité accordé !')
     } catch (error) {
       setAttemptCount(prev => prev + 1)
-      toast({
-        title: t('auth.loginError'),
-        description: error instanceof Error ? error.message : t('Invalid voucher code'),
-        variant: 'destructive',
-      })
+      toast.error(error instanceof Error ? error.message : 'Code invité invalide')
     }
+  }
+
+  const handleForgotPassword = () => {
+    if (onForgotPassword) {
+      onForgotPassword()
+    } else {
+      toast.success('Fonctionnalité en cours de développement')
+    }
+  }
+
+  const handleDemoLogin = (email: string, password: string) => {
+    accountForm.setValue('email', email)
+    accountForm.setValue('password', password)
+    toast.success('Identifiants de démo remplis')
+  }
+
+  const handleDemoVoucher = (code: string) => {
+    voucherForm.setValue('code', code)
+    toast.success('Code de démo rempli')
   }
 
   const isBlocked = attemptCount >= 5
@@ -98,15 +102,15 @@ export function LoginForm({
           {onBack && (
             <button 
               onClick={onBack}
-              className="text-sm text-gray-400 hover:text-white mb-2 block transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
-              aria-label={t('common.back')}
+              className="text-sm text-gray-400 hover:text-white mb-2 block transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 rounded mx-auto"
+              aria-label="Retour à l'accueil"
             >
               <ArrowLeft className="inline w-4 h-4 mr-1" />
-              {t('Back to home')}
+              Retour à l'accueil
             </button>
           )}
-          <h1 className="text-2xl font-bold text-white">{t('Internet Access')}</h1>
-          <p className="text-gray-400">{t('Connect to access the internet')}</p>
+          <h1 className="text-2xl font-bold text-white">Accès Internet</h1>
+          <p className="text-gray-400">Connectez-vous pour accéder à Internet</p>
         </div>
 
         <Card>
@@ -122,7 +126,7 @@ export function LoginForm({
                     : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
                 }`}
               >
-                {t('Subscriber Account')}
+                Compte Abonné
               </button>
               <button
                 role="tab"
@@ -134,7 +138,7 @@ export function LoginForm({
                     : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
                 }`}
               >
-                {t('Guest Code')}
+                Code Invité
               </button>
             </div>
           </CardHeader>
@@ -143,7 +147,7 @@ export function LoginForm({
             {isBlocked && (
               <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20">
                 <p className="text-sm text-red-400">
-                  {t('Account temporarily locked due to multiple failed attempts. Please try again later.')}
+                  Compte temporairement bloqué suite à plusieurs tentatives échouées. Veuillez réessayer plus tard.
                 </p>
               </div>
             )}
@@ -151,13 +155,13 @@ export function LoginForm({
             {loginMode === 'account' ? (
               <form onSubmit={accountForm.handleSubmit(handleAccountSubmit)} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="email">{t('auth.email')}</Label>
+                  <Label htmlFor="email">Adresse e-mail</Label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
                     <Input
                       id="email"
                       type="email"
-                      placeholder="your@email.com"
+                      placeholder="votre@email.com"
                       className="pl-10"
                       disabled={loading || isBlocked}
                       {...accountForm.register('email')}
@@ -166,13 +170,13 @@ export function LoginForm({
                   </div>
                   {accountForm.formState.errors.email && (
                     <p id="email-error" className="text-sm text-red-400" role="alert">
-                      {t(accountForm.formState.errors.email.message!)}
+                      {accountForm.formState.errors.email.message}
                     </p>
                   )}
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="password">{t('auth.password')}</Label>
+                  <Label htmlFor="password">Mot de passe</Label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
                     <Input
@@ -188,7 +192,7 @@ export function LoginForm({
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
                       className="absolute right-3 top-2.5 text-gray-400 hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
-                      aria-label={showPassword ? t('Hide password') : t('Show password')}
+                      aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
                       disabled={loading || isBlocked}
                     >
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -196,7 +200,7 @@ export function LoginForm({
                   </div>
                   {accountForm.formState.errors.password && (
                     <p id="password-error" className="text-sm text-red-400" role="alert">
-                      {t(accountForm.formState.errors.password.message!)}
+                      {accountForm.formState.errors.password.message}
                     </p>
                   )}
                 </div>
@@ -206,17 +210,17 @@ export function LoginForm({
                   className="w-full bg-blue-500 hover:bg-blue-600 focus:ring-2 focus:ring-blue-500" 
                   disabled={loading || isBlocked}
                 >
-                  {loading ? t('common.loading') : t('auth.login')}
+                  {loading ? 'Connexion...' : 'Se connecter'}
                 </Button>
               </form>
             ) : (
               <form onSubmit={voucherForm.handleSubmit(handleVoucherSubmit)} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="voucher">{t('auth.voucherCode')}</Label>
+                  <Label htmlFor="voucher">Code d'accès invité</Label>
                   <Input
                     id="voucher"
                     type="text"
-                    placeholder={t('Enter your 8-character code')}
+                    placeholder="Entrez votre code 8 caractères"
                     maxLength={8}
                     className="text-center text-lg tracking-widest font-mono uppercase"
                     disabled={loading || isBlocked}
@@ -229,11 +233,11 @@ export function LoginForm({
                   />
                   {voucherForm.formState.errors.code && (
                     <p id="code-error" className="text-sm text-red-400" role="alert">
-                      {t(voucherForm.formState.errors.code.message!)}
+                      {voucherForm.formState.errors.code.message}
                     </p>
                   )}
                   <p className="text-xs text-gray-500 text-center">
-                    {t('The code consists of 8 alphanumeric characters')}
+                    Le code se compose de 8 caractères alphanumériques
                   </p>
                 </div>
 
@@ -242,7 +246,7 @@ export function LoginForm({
                   className="w-full bg-blue-500 hover:bg-blue-600 focus:ring-2 focus:ring-blue-500" 
                   disabled={loading || isBlocked}
                 >
-                  {loading ? t('common.loading') : t('auth.login')}
+                  {loading ? 'Connexion...' : 'Se connecter'}
                 </Button>
               </form>
             )}
@@ -251,23 +255,47 @@ export function LoginForm({
               <div className="mt-6 space-y-3">
                 <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
                   <p className="text-xs text-blue-300 mb-2">
-                    <strong>{t('Demo accounts')}:</strong>
+                    <strong>Comptes de démonstration :</strong>
                   </p>
-                  <div className="space-y-1 text-xs">
-                    <div>Admin: <code className="text-blue-200">admin@captivenet.com</code> / <code className="text-blue-200">AdminPassword123!</code></div>
-                    <div>User: <code className="text-blue-200">user@example.com</code> / <code className="text-blue-200">UserPassword123!</code></div>
+                  <div className="space-y-2 text-xs">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-1">
+                      <span>Admin:</span>
+                      <div className="flex flex-wrap gap-1">
+                        <button
+                          type="button"
+                          onClick={() => handleDemoLogin('admin@captivenet.com', 'AdminPassword123!')}
+                          className="text-blue-200 hover:text-blue-100 underline focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
+                        >
+                          admin@captivenet.com
+                        </button>
+                        <span>/</span>
+                        <code className="text-blue-200">AdminPassword123!</code>
+                      </div>
+                    </div>
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-1">
+                      <span>User:</span>
+                      <div className="flex flex-wrap gap-1">
+                        <button
+                          type="button"
+                          onClick={() => handleDemoLogin('user@example.com', 'UserPassword123!')}
+                          className="text-blue-200 hover:text-blue-100 underline focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
+                        >
+                          user@example.com
+                        </button>
+                        <span>/</span>
+                        <code className="text-blue-200">UserPassword123!</code>
+                      </div>
+                    </div>
                   </div>
                 </div>
                 
                 <div className="text-center">
-                  {onForgotPassword && (
-                    <button 
-                      onClick={onForgotPassword}
-                      className="text-sm text-blue-400 hover:text-blue-300 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
-                    >
-                      {t('auth.forgotPassword')}
-                    </button>
-                  )}
+                  <button 
+                    onClick={handleForgotPassword}
+                    className="text-sm text-blue-400 hover:text-blue-300 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
+                  >
+                    Mot de passe oublié ?
+                  </button>
                 </div>
                 
                 <div className="relative">
@@ -275,7 +303,7 @@ export function LoginForm({
                     <div className="w-full border-t border-gray-800"></div>
                   </div>
                   <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-gray-950 px-2 text-gray-400">{t('New?')}</span>
+                    <span className="bg-gray-950 px-2 text-gray-400">Nouveau ?</span>
                   </div>
                 </div>
 
@@ -285,7 +313,7 @@ export function LoginForm({
                   onClick={onRegister}
                   disabled={loading}
                 >
-                  {t('Create subscriber account')}
+                  Créer un compte abonné
                 </Button>
               </div>
             )}
@@ -294,13 +322,19 @@ export function LoginForm({
               <div className="mt-6">
                 <div className="p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
                   <p className="text-xs text-yellow-300 mb-2">
-                    <strong>{t('Test codes')}:</strong>
+                    <strong>Codes de test :</strong>
                   </p>
                   <div className="grid grid-cols-2 gap-2 text-xs">
-                    <code className="text-yellow-200">DEMO1234</code>
-                    <code className="text-yellow-200">TEST5678</code>
-                    <code className="text-yellow-200">GUEST999</code>
-                    <code className="text-yellow-200">INVITE01</code>
+                    {['DEMO1234', 'TEST5678', 'GUEST999', 'INVITE01'].map((code) => (
+                      <button
+                        key={code}
+                        type="button"
+                        onClick={() => handleDemoVoucher(code)}
+                        className="text-yellow-200 hover:text-yellow-100 underline focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
+                      >
+                        {code}
+                      </button>
+                    ))}
                   </div>
                 </div>
               </div>
@@ -309,10 +343,13 @@ export function LoginForm({
         </Card>
 
         <div className="text-center text-xs text-gray-500">
-          {t('By connecting, you accept our')}{' '}
-          <a href="#" className="text-blue-400 hover:text-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded">
-            {t('Terms of Service')}
-          </a>
+          En vous connectant, vous acceptez nos{' '}
+          <button 
+            onClick={() => toast.success('CGU en cours de développement')}
+            className="text-blue-400 hover:text-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded underline"
+          >
+            Conditions d'Utilisation
+          </button>
         </div>
       </div>
     </div>

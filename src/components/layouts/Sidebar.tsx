@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { NavLink } from 'react-router-dom'
+import { NavLink, useNavigate } from 'react-router-dom'
 import { 
   Shield, 
   LayoutDashboard, 
@@ -20,8 +20,11 @@ import {
   UserCheck,
   Plus,
   Database,
-  Server
+  Server,
+  LogOut
 } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { useAuth } from '@/hooks/useAuth'
 import { cn } from '@/lib/utils'
 
 interface User {
@@ -37,6 +40,13 @@ interface SidebarProps {
 
 export function Sidebar({ user }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false)
+  const { logout } = useAuth()
+  const navigate = useNavigate()
+
+  const handleLogout = async () => {
+    await logout()
+    navigate('/', { replace: true })
+  }
 
   const getNavigationItems = () => {
     const baseItems = [
@@ -63,8 +73,7 @@ export function Sidebar({ user }: SidebarProps) {
         { icon: UserCheck, label: 'Validations', path: '/validation' },
         { icon: Ticket, label: 'Codes Invités', path: '/vouchers' },
         { icon: Plus, label: 'Générer Codes', path: '/voucher-generator' },
-        { icon: Activity, label: 'Sessions', path: '/sessions' },
-        { icon: Activity, label: 'Monitoring Sessions', path: '/session-monitor' },
+        { icon: Activity, label: 'Sessions Actives', path: '/session-monitor' },
         { icon: Database, label: 'Gestion Quotas', path: '/quota-manager' },
         { icon: Calendar, label: 'Calendrier', path: '/calendar' },
         { icon: CheckSquare, label: 'Tâches', path: '/tasks' },
@@ -86,9 +95,10 @@ export function Sidebar({ user }: SidebarProps) {
 
   return (
     <div className={cn(
-      "bg-gray-950 border-r border-gray-800 transition-all duration-300",
+      "bg-gray-950 border-r border-gray-800 transition-all duration-300 flex flex-col",
       collapsed ? "w-16" : "w-64"
     )}>
+      {/* Header */}
       <div className="p-4 border-b border-gray-800">
         <div className="flex items-center justify-between">
           {!collapsed && (
@@ -102,25 +112,28 @@ export function Sidebar({ user }: SidebarProps) {
           )}
           <button
             onClick={() => setCollapsed(!collapsed)}
-            className="p-1 rounded-md hover:bg-gray-800 text-gray-400 hover:text-white"
+            className="p-1 rounded-md hover:bg-gray-800 text-gray-400 hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
             {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
           </button>
         </div>
       </div>
 
-      <nav className="p-4 space-y-2">
+      {/* Navigation */}
+      <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
         {navigationItems.map((item) => (
           <NavLink
             key={item.path}
             to={item.path}
             className={({ isActive }) => cn(
-              "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+              "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500",
               isActive 
                 ? "bg-blue-500 text-white" 
                 : "text-gray-400 hover:text-white hover:bg-gray-800",
               collapsed && "justify-center"
             )}
+            title={collapsed ? item.label : undefined}
           >
             <item.icon className="h-5 w-5 flex-shrink-0" />
             {!collapsed && <span>{item.label}</span>}
@@ -128,21 +141,44 @@ export function Sidebar({ user }: SidebarProps) {
         ))}
       </nav>
 
-      {user && !collapsed && (
-        <div className="absolute bottom-4 left-4 right-4">
-          <div className="p-3 rounded-lg bg-gray-800 border border-gray-700">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center">
-                <span className="text-xs font-medium text-white">
-                  {user.email.charAt(0).toUpperCase()}
-                </span>
+      {/* User Info & Logout */}
+      {user && (
+        <div className="p-4 border-t border-gray-800">
+          {!collapsed ? (
+            <div className="space-y-3">
+              <div className="p-3 rounded-lg bg-gray-800 border border-gray-700">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center">
+                    <span className="text-xs font-medium text-white">
+                      {user.email.charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-white truncate">{user.email}</p>
+                    <p className="text-xs text-gray-400">{user.role}</p>
+                  </div>
+                </div>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-white truncate">{user.email}</p>
-                <p className="text-xs text-gray-400">{user.role}</p>
-              </div>
+              <Button 
+                variant="ghost" 
+                className="w-full justify-start text-gray-400 hover:text-white hover:bg-gray-800"
+                onClick={handleLogout}
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                Déconnexion
+              </Button>
             </div>
-          </div>
+          ) : (
+            <Button 
+              variant="ghost" 
+              size="icon"
+              className="w-full text-gray-400 hover:text-white hover:bg-gray-800"
+              onClick={handleLogout}
+              title="Déconnexion"
+            >
+              <LogOut className="h-4 w-4" />
+            </Button>
+          )}
         </div>
       )}
     </div>
