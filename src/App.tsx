@@ -1,378 +1,170 @@
-import i18n from 'i18next'
-import { initReactI18next } from 'react-i18next'
-import LanguageDetector from 'i18next-browser-languagedetector'
+import React from 'react'
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { Toaster } from '@/components/ui/toaster'
+import { AuthProvider, useAuth } from '@/hooks/useAuth'
+import { NotificationsProvider } from '@/hooks/useNotifications'
+import { ThemeProvider } from '@/hooks/useTheme'
 
-const resources = {
-  fr: {
-    translation: {
-      // Navigation
-      'nav.dashboard': 'Tableau de Bord',
-      'nav.profile': 'Mon Profil',
-      'nav.timeline': 'Timeline',
-      'nav.calendar': 'Calendrier',
-      'nav.tasks': 'Tâches',
-      'nav.files': 'Fichiers',
-      'nav.notes': 'Notes',
-      'nav.contacts': 'Contacts',
-      'nav.users': 'Utilisateurs',
-      'nav.vouchers': 'Codes Invités',
-      'nav.sessions': 'Sessions',
-      'nav.config': 'Configuration',
-      'nav.audit': 'Audit',
-      
-      // Guest Navigation
-      'guest.welcome.title': 'Accès Internet Wi-Fi',
-      'guest.welcome.subtitle': 'Connectez-vous rapidement avec votre code d\'accès invité pour profiter d\'Internet en toute sécurité.',
-      'guest.welcome.getStarted': 'Commencer',
-      'guest.welcome.viewPlans': 'Voir les Offres',
-      'guest.welcome.redirecting': 'Redirection vers la connexion invité',
-      'guest.welcome.viewingPlans': 'Consultation des plans disponibles',
-      
-      // Guest Benefits
-      'guest.benefits.title': 'Pourquoi Choisir Notre Service',
-      'guest.benefits.subtitle': 'Une expérience Internet optimale avec sécurité et simplicité',
-      'guest.benefits.security.title': 'Connexion Sécurisée',
-      'guest.benefits.security.desc': 'Chiffrement WPA3 et protection des données personnelles',
-      'guest.benefits.instant.title': 'Accès Instantané',
-      'guest.benefits.instant.desc': 'Connexion immédiate avec votre code d\'accès',
-      'guest.benefits.quotas.title': 'Quotas Transparents',
-      'guest.benefits.quotas.desc': 'Suivi en temps réel de votre consommation',
-      'guest.benefits.support.title': 'Support Disponible',
-      'guest.benefits.support.desc': 'Assistance technique en cas de problème',
-      
-      // Guest Plans
-      'guest.plans.title': 'Offres d\'Accès Invité',
-      'guest.plans.subtitle': 'Choisissez la durée d\'accès qui vous convient',
-      'guest.plans.popular': 'Populaire',
-      'guest.plans.select': 'Choisir cette Offre',
-      'guest.plans.hourly.name': 'Accès 1 Heure',
-      'guest.plans.hourly.price': 'Gratuit',
-      'guest.plans.daily.name': 'Accès 24 Heures',
-      'guest.plans.weekly.name': 'Accès 7 Jours',
-      
-      // Guest Login
-      'guest.login.title': 'Code d\'Accès Invité',
-      'guest.login.subtitle': 'Saisissez votre code de 8 caractères pour accéder à Internet',
-      'guest.login.back': 'Retour à l\'accueil',
-      'guest.login.cardTitle': 'Connexion Sécurisée',
-      'guest.login.codeLabel': 'Code d\'Accès (8 caractères)',
-      'guest.login.codeFormat': 'Format: 8 caractères alphanumériques',
-      'guest.login.connect': 'Se Connecter',
-      'guest.login.connecting': 'Connexion...',
-      'guest.login.success': 'Connexion réussie ! Redirection...',
-      'guest.login.invalidCode': 'Code invalide ou expiré',
-      'guest.login.blocked': 'Trop de tentatives échouées. Veuillez patienter 5 minutes.',
-      'guest.login.unblocked': 'Vous pouvez maintenant réessayer',
-      'guest.login.autoSubmit': 'Connexion automatique...',
-      'guest.login.demoCodes': 'Codes de Démonstration',
-      'guest.login.demoHelp': 'Cliquez sur un code pour le tester',
-      'guest.login.help.title': 'Besoin d\'Aide ?',
-      'guest.login.help.step1': 'Votre code se trouve sur votre ticket d\'accès',
-      'guest.login.help.step2': 'Saisissez les 8 caractères sans espaces',
-      'guest.login.help.step3': 'La connexion se fait automatiquement',
-      'guest.login.help.step4': 'Chaque code n\'est utilisable qu\'une seule fois',
-      'guest.login.help.contactLink': 'Contacter le Support',
-      
-      // Guest Dashboard
-      'guest.dashboard.title': 'Session Invité Active',
-      'guest.dashboard.loading': 'Chargement de votre session...',
-      'guest.dashboard.noSession': 'Session Introuvable',
-      'guest.dashboard.sessionExpired': 'Votre session a expiré ou est invalide',
-      'guest.dashboard.reconnect': 'Se Reconnecter',
-      'guest.dashboard.status': 'Statut',
-      'guest.dashboard.connected': 'Connecté',
-      'guest.dashboard.since': 'Depuis',
-      'guest.dashboard.timeRemaining': 'Temps Restant',
-      'guest.dashboard.expires': 'Expire à',
-      'guest.dashboard.dataRemaining': 'Données Restantes',
-      'guest.dashboard.of': 'sur',
-      'guest.dashboard.connection': 'Connexion',
-      'guest.dashboard.dataUsage': 'Consommation Données',
-      'guest.dashboard.timeUsage': 'Temps de Connexion',
-      'guest.dashboard.usedOf': 'utilisé sur',
-      'guest.dashboard.normal': 'Normal',
-      'guest.dashboard.warning': 'Attention',
-      'guest.dashboard.critical': 'Critique',
-      'guest.dashboard.dataWarning': 'Attention : quota données bientôt atteint. Connexion automatiquement coupée à 100%.',
-      'guest.dashboard.timeWarning': 'Attention : quota temps bientôt atteint. Connexion automatiquement coupée à 100%.',
-      'guest.dashboard.networkInfo': 'Informations Réseau',
-      'guest.dashboard.ipAddress': 'Adresse IP',
-      'guest.dashboard.macAddress': 'MAC Address',
-      'guest.dashboard.speed': 'Vitesse',
-      'guest.dashboard.device': 'Appareil',
-      'guest.dashboard.sessionTimeline': 'Chronologie de Session',
-      'guest.dashboard.sessionStart': 'Début de Session',
-      'guest.dashboard.lastActivity': 'Dernière Activité',
-      'guest.dashboard.sessionExpires': 'Expiration',
-      'guest.dashboard.voucherDetails': 'Détails du Code d\'Accès',
-      'guest.dashboard.voucherCode': 'Code',
-      'guest.dashboard.plan': 'Plan',
-      'guest.dashboard.usage': 'Utilisation',
-      'guest.dashboard.codeStatus': 'Statut Code',
-      'guest.dashboard.expired': 'Expiré',
-      'guest.dashboard.active': 'Actif',
-      'guest.dashboard.voucherUsed': 'Code d\'Accès Utilisé',
-      'guest.dashboard.voucherInfo': 'Votre code',
-      'guest.dashboard.voucherExpired': 'a été utilisé et est maintenant expiré. Votre session reste active jusqu\'à épuisement des quotas.',
-      'guest.dashboard.codeExpired': 'Code Expiré',
-      'guest.dashboard.cannotExtend': 'Impossible d\'étendre une session invité. Le code est à usage unique.',
-      'guest.dashboard.profile': 'Profil',
-      'guest.dashboard.refresh': 'Actualiser',
-      'guest.dashboard.refreshing': 'Actualisation...',
-      'guest.dashboard.refreshed': 'Session actualisée',
-      'guest.dashboard.logout': 'Déconnexion',
-      'guest.dashboard.confirmLogout': 'Êtes-vous sûr de vouloir vous déconnecter ?',
-      'guest.dashboard.loggedOut': 'Déconnexion réussie',
-      'guest.dashboard.viewingProfile': 'Affichage du profil',
-      'guest.dashboard.terms.title': 'Conditions d\'Utilisation',
-      'guest.dashboard.terms.rule1': 'Usage personnel et conforme à la législation',
-      'guest.dashboard.terms.rule2': 'Interdiction de contenus illégaux',
-      'guest.dashboard.terms.rule3': 'Respect des quotas alloués',
-      'guest.dashboard.terms.rule4': 'Déconnexion automatique à épuisement des quotas',
-      'guest.dashboard.terms.rule5': 'Code d\'accès à usage unique - impossible de se reconnecter',
-      
-      // Auth
-      'auth.login': 'Se connecter',
-      'auth.logout': 'Déconnexion',
-      'auth.register': 'S\'inscrire',
-      'auth.email': 'Adresse e-mail',
-      'auth.password': 'Mot de passe',
-      'auth.confirmPassword': 'Confirmer le mot de passe',
-      'auth.forgotPassword': 'Mot de passe oublié ?',
-      'auth.voucherCode': 'Code d\'accès invité',
-      'auth.loginSuccess': 'Connexion réussie',
-      'auth.loginError': 'Erreur de connexion',
-      'auth.invalidCredentials': 'Identifiants invalides',
-      
-      // Dashboard
-      'dashboard.title': 'Tableau de Bord',
-      'dashboard.stats.totalUsers': 'Utilisateurs Totaux',
-      'dashboard.stats.activeConnections': 'Connexions Actives',
-      'dashboard.stats.dataTransferred': 'Données Transférées',
-      'dashboard.stats.uptime': 'Disponibilité',
-      
-      // Common
-      'common.save': 'Sauvegarder',
-      'common.cancel': 'Annuler',
-      'common.delete': 'Supprimer',
-      'common.edit': 'Modifier',
-      'common.add': 'Ajouter',
-      'common.search': 'Rechercher',
-      'common.filter': 'Filtrer',
-      'common.loading': 'Chargement...',
-      'common.error': 'Erreur',
-      'common.success': 'Succès',
-      'common.confirm': 'Confirmer',
-      
-      // Notifications
-      'notifications.title': 'Notifications',
-      'notifications.markAsRead': 'Marquer comme lu',
-      'notifications.noNotifications': 'Aucune notification',
-      
-      // Errors
-      'error.required': 'Ce champ est requis',
-      'error.invalidEmail': 'Adresse e-mail invalide',
-      'error.passwordTooShort': 'Le mot de passe doit contenir au moins 12 caractères',
-      'error.passwordMismatch': 'Les mots de passe ne correspondent pas',
-      'error.networkError': 'Erreur de connexion réseau',
-      'error.serverError': 'Erreur serveur',
-      'error.unauthorized': 'Non autorisé',
-      'error.forbidden': 'Accès interdit',
-    }
+// Import components
+import MainLayout from '@/components/layouts/MainLayout'
+import WelcomePage from '@/components/WelcomePage'
+import LoginForm from '@/components/forms/LoginForm'
+import RegisterForm from '@/components/forms/RegisterForm'
+import Dashboard from '@/components/Dashboard'
+import AdminPanel from '@/components/AdminPanel'
+import ProfileSettings from '@/components/profile/ProfileSettings'
+
+// Import guest components
+import GuestWelcome from '@/components/guest/GuestWelcome'
+import GuestLogin from '@/components/guest/GuestLogin'
+import GuestDashboard from '@/components/guest/GuestDashboard'
+import GuestProfile from '@/components/guest/GuestProfile'
+import GuestLayout from '@/components/guest/GuestLayout'
+
+// Import i18n
+import '@/lib/i18n'
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      retry: 1,
+    },
   },
-  en: {
-    translation: {
-      // Navigation
-      'nav.dashboard': 'Dashboard',
-      'nav.profile': 'My Profile',
-      'nav.timeline': 'Timeline',
-      'nav.calendar': 'Calendar',
-      'nav.tasks': 'Tasks',
-      'nav.files': 'Files',
-      'nav.notes': 'Notes',
-      'nav.contacts': 'Contacts',
-      'nav.users': 'Users',
-      'nav.vouchers': 'Guest Codes',
-      'nav.sessions': 'Sessions',
-      'nav.config': 'Configuration',
-      'nav.audit': 'Audit',
-      
-      // Guest Navigation
-      'guest.welcome.title': 'Wi-Fi Internet Access',
-      'guest.welcome.subtitle': 'Connect quickly with your guest access code to enjoy secure Internet.',
-      'guest.welcome.getStarted': 'Get Started',
-      'guest.welcome.viewPlans': 'View Plans',
-      'guest.welcome.redirecting': 'Redirecting to guest login',
-      'guest.welcome.viewingPlans': 'Viewing available plans',
-      
-      // Guest Benefits
-      'guest.benefits.title': 'Why Choose Our Service',
-      'guest.benefits.subtitle': 'Optimal Internet experience with security and simplicity',
-      'guest.benefits.security.title': 'Secure Connection',
-      'guest.benefits.security.desc': 'WPA3 encryption and personal data protection',
-      'guest.benefits.instant.title': 'Instant Access',
-      'guest.benefits.instant.desc': 'Immediate connection with your access code',
-      'guest.benefits.quotas.title': 'Transparent Quotas',
-      'guest.benefits.quotas.desc': 'Real-time monitoring of your consumption',
-      'guest.benefits.support.title': 'Support Available',
-      'guest.benefits.support.desc': 'Technical assistance in case of problems',
-      
-      // Guest Plans
-      'guest.plans.title': 'Guest Access Plans',
-      'guest.plans.subtitle': 'Choose the access duration that suits you',
-      'guest.plans.popular': 'Popular',
-      'guest.plans.select': 'Choose This Plan',
-      'guest.plans.hourly.name': '1 Hour Access',
-      'guest.plans.hourly.price': 'Free',
-      'guest.plans.daily.name': '24 Hour Access',
-      'guest.plans.weekly.name': '7 Day Access',
-      
-      // Guest Login
-      'guest.login.title': 'Guest Access Code',
-      'guest.login.subtitle': 'Enter your 8-character code to access the Internet',
-      'guest.login.back': 'Back to home',
-      'guest.login.cardTitle': 'Secure Connection',
-      'guest.login.codeLabel': 'Access Code (8 characters)',
-      'guest.login.codeFormat': 'Format: 8 alphanumeric characters',
-      'guest.login.connect': 'Connect',
-      'guest.login.connecting': 'Connecting...',
-      'guest.login.success': 'Connection successful! Redirecting...',
-      'guest.login.invalidCode': 'Invalid or expired code',
-      'guest.login.blocked': 'Too many failed attempts. Please wait 5 minutes.',
-      'guest.login.unblocked': 'You can now try again',
-      'guest.login.autoSubmit': 'Auto-connecting...',
-      'guest.login.demoCodes': 'Demo Codes',
-      'guest.login.demoHelp': 'Click on a code to test it',
-      'guest.login.help.title': 'Need Help?',
-      'guest.login.help.step1': 'Your code is on your access ticket',
-      'guest.login.help.step2': 'Enter the 8 characters without spaces',
-      'guest.login.help.step3': 'Connection happens automatically',
-      'guest.login.help.step4': 'Each code can only be used once',
-      'guest.login.help.contactLink': 'Contact Support',
-      
-      // Guest Dashboard
-      'guest.dashboard.title': 'Active Guest Session',
-      'guest.dashboard.loading': 'Loading your session...',
-      'guest.dashboard.noSession': 'Session Not Found',
-      'guest.dashboard.sessionExpired': 'Your session has expired or is invalid',
-      'guest.dashboard.reconnect': 'Reconnect',
-      'guest.dashboard.status': 'Status',
-      'guest.dashboard.connected': 'Connected',
-      'guest.dashboard.since': 'Since',
-      'guest.dashboard.timeRemaining': 'Time Remaining',
-      'guest.dashboard.expires': 'Expires at',
-      'guest.dashboard.dataRemaining': 'Data Remaining',
-      'guest.dashboard.of': 'of',
-      'guest.dashboard.connection': 'Connection',
-      'guest.dashboard.dataUsage': 'Data Usage',
-      'guest.dashboard.timeUsage': 'Connection Time',
-      'guest.dashboard.usedOf': 'used of',
-      'guest.dashboard.normal': 'Normal',
-      'guest.dashboard.warning': 'Warning',
-      'guest.dashboard.critical': 'Critical',
-      'guest.dashboard.dataWarning': 'Warning: data quota almost reached. Connection will be automatically cut at 100%.',
-      'guest.dashboard.timeWarning': 'Warning: time quota almost reached. Connection will be automatically cut at 100%.',
-      'guest.dashboard.networkInfo': 'Network Information',
-      'guest.dashboard.ipAddress': 'IP Address',
-      'guest.dashboard.macAddress': 'MAC Address',
-      'guest.dashboard.speed': 'Speed',
-      'guest.dashboard.device': 'Device',
-      'guest.dashboard.sessionTimeline': 'Session Timeline',
-      'guest.dashboard.sessionStart': 'Session Start',
-      'guest.dashboard.lastActivity': 'Last Activity',
-      'guest.dashboard.sessionExpires': 'Expiration',
-      'guest.dashboard.voucherDetails': 'Access Code Details',
-      'guest.dashboard.voucherCode': 'Code',
-      'guest.dashboard.plan': 'Plan',
-      'guest.dashboard.usage': 'Usage',
-      'guest.dashboard.codeStatus': 'Code Status',
-      'guest.dashboard.expired': 'Expired',
-      'guest.dashboard.active': 'Active',
-      'guest.dashboard.voucherUsed': 'Access Code Used',
-      'guest.dashboard.voucherInfo': 'Your code',
-      'guest.dashboard.voucherExpired': 'has been used and is now expired. Your session remains active until quotas are exhausted.',
-      'guest.dashboard.codeExpired': 'Code Expired',
-      'guest.dashboard.cannotExtend': 'Cannot extend a guest session. The code is single-use.',
-      'guest.dashboard.profile': 'Profile',
-      'guest.dashboard.refresh': 'Refresh',
-      'guest.dashboard.refreshing': 'Refreshing...',
-      'guest.dashboard.refreshed': 'Session refreshed',
-      'guest.dashboard.logout': 'Logout',
-      'guest.dashboard.confirmLogout': 'Are you sure you want to logout?',
-      'guest.dashboard.loggedOut': 'Logout successful',
-      'guest.dashboard.viewingProfile': 'Viewing profile',
-      'guest.dashboard.terms.title': 'Terms of Use',
-      'guest.dashboard.terms.rule1': 'Personal use and compliance with legislation',
-      'guest.dashboard.terms.rule2': 'Prohibition of illegal content',
-      'guest.dashboard.terms.rule3': 'Respect allocated quotas',
-      'guest.dashboard.terms.rule4': 'Automatic disconnection when quotas are exhausted',
-      'guest.dashboard.terms.rule5': 'Single-use access code - cannot reconnect',
-      
-      // Auth
-      'auth.login': 'Login',
-      'auth.logout': 'Logout',
-      'auth.register': 'Register',
-      'auth.email': 'Email address',
-      'auth.password': 'Password',
-      'auth.confirmPassword': 'Confirm password',
-      'auth.forgotPassword': 'Forgot password?',
-      'auth.voucherCode': 'Guest access code',
-      'auth.loginSuccess': 'Login successful',
-      'auth.loginError': 'Login error',
-      'auth.invalidCredentials': 'Invalid credentials',
-      
-      // Dashboard
-      'dashboard.title': 'Dashboard',
-      'dashboard.stats.totalUsers': 'Total Users',
-      'dashboard.stats.activeConnections': 'Active Connections',
-      'dashboard.stats.dataTransferred': 'Data Transferred',
-      'dashboard.stats.uptime': 'Uptime',
-      
-      // Common
-      'common.save': 'Save',
-      'common.cancel': 'Cancel',
-      'common.delete': 'Delete',
-      'common.edit': 'Edit',
-      'common.add': 'Add',
-      'common.search': 'Search',
-      'common.filter': 'Filter',
-      'common.loading': 'Loading...',
-      'common.error': 'Error',
-      'common.success': 'Success',
-      'common.confirm': 'Confirm',
-      
-      // Notifications
-      'notifications.title': 'Notifications',
-      'notifications.markAsRead': 'Mark as read',
-      'notifications.noNotifications': 'No notifications',
-      
-      // Errors
-      'error.required': 'This field is required',
-      'error.invalidEmail': 'Invalid email address',
-      'error.passwordTooShort': 'Password must be at least 12 characters',
-      'error.passwordMismatch': 'Passwords do not match',
-      'error.networkError': 'Network connection error',
-      'error.serverError': 'Server error',
-      'error.unauthorized': 'Unauthorized',
-      'error.forbidden': 'Access forbidden',
-    }
+})
+
+// Protected Route Component
+const ProtectedRoute: React.FC<{ children: React.ReactNode; requiredRole?: string }> = ({ 
+  children, 
+  requiredRole 
+}) => {
+  const { user, isAuthenticated } = useAuth()
+  
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />
   }
+  
+  if (requiredRole && user?.role !== requiredRole && user?.role !== 'SUPERADMIN') {
+    return <Navigate to="/dashboard" replace />
+  }
+  
+  return <>{children}</>
 }
 
-i18n
-  .use(LanguageDetector)
-  .use(initReactI18next)
-  .init({
-    resources,
-    fallbackLng: 'fr',
-    debug: false,
-    interpolation: {
-      escapeValue: false,
-    },
-    detection: {
-      order: ['localStorage', 'navigator', 'htmlTag'],
-      caches: ['localStorage'],
-    },
-  })
+// Guest Route Component
+const GuestRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user, isAuthenticated } = useAuth()
+  
+  if (isAuthenticated && user?.role !== 'GUEST') {
+    return <Navigate to="/dashboard" replace />
+  }
+  
+  return <>{children}</>
+}
 
-export default i18n
+// App Content Component
+const AppContent: React.FC = () => {
+  const { user, isAuthenticated } = useAuth()
+
+  return (
+    <Routes>
+      {/* Public Routes */}
+      <Route path="/" element={<WelcomePage />} />
+      <Route path="/login" element={<LoginForm />} />
+      <Route path="/register" element={<RegisterForm />} />
+      
+      {/* Guest Routes */}
+      <Route path="/guest" element={<GuestRoute><GuestWelcome /></GuestRoute>} />
+      <Route path="/guest/login" element={<GuestRoute><GuestLogin /></GuestRoute>} />
+      <Route 
+        path="/guest/dashboard" 
+        element={
+          <GuestRoute>
+            <GuestLayout>
+              <GuestDashboard />
+            </GuestLayout>
+          </GuestRoute>
+        } 
+      />
+      <Route 
+        path="/guest/profile" 
+        element={
+          <GuestRoute>
+            <GuestLayout>
+              <GuestProfile />
+            </GuestLayout>
+          </GuestRoute>
+        } 
+      />
+      
+      {/* Protected Routes */}
+      <Route 
+        path="/dashboard" 
+        element={
+          <ProtectedRoute>
+            <MainLayout>
+              <Dashboard />
+            </MainLayout>
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/profile" 
+        element={
+          <ProtectedRoute>
+            <MainLayout>
+              <ProfileSettings />
+            </MainLayout>
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/admin" 
+        element={
+          <ProtectedRoute requiredRole="ADMIN">
+            <MainLayout>
+              <AdminPanel />
+            </MainLayout>
+          </ProtectedRoute>
+        } 
+      />
+      
+      {/* Catch all route */}
+      <Route 
+        path="*" 
+        element={
+          isAuthenticated ? (
+            user?.role === 'GUEST' ? (
+              <Navigate to="/guest/dashboard" replace />
+            ) : (
+              <Navigate to="/dashboard" replace />
+            )
+          ) : (
+            <Navigate to="/" replace />
+          )
+        } 
+      />
+    </Routes>
+  )
+}
+
+// Main App Component
+const App: React.FC = () => {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider>
+        <Router>
+          <AuthProvider>
+            <NotificationsProvider>
+              <AppContent />
+              <Toaster />
+            </NotificationsProvider>
+          </AuthProvider>
+        </Router>
+      </ThemeProvider>
+    </QueryClientProvider>
+  )
+}
+
+export default App
