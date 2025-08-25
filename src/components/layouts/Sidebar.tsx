@@ -14,7 +14,13 @@ import {
   Clock,
   Settings,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Wifi,
+  BarChart3,
+  UserCheck,
+  Plus,
+  Database,
+  Server
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -42,6 +48,8 @@ export function Sidebar({ user }: SidebarProps) {
     if (user?.role === 'SUBSCRIBER') {
       return [
         ...baseItems,
+        { icon: Wifi, label: 'Mes Appareils', path: '/devices' },
+        { icon: BarChart3, label: 'Mon Usage', path: '/usage' },
         { icon: Activity, label: 'Mes Sessions', path: '/sessions' },
         { icon: Calendar, label: 'Calendrier', path: '/calendar' },
         { icon: StickyNote, label: 'Notes', path: '/notes' },
@@ -52,14 +60,19 @@ export function Sidebar({ user }: SidebarProps) {
       return [
         ...baseItems,
         { icon: Users, label: 'Utilisateurs', path: '/users' },
+        { icon: UserCheck, label: 'Validations', path: '/validation' },
         { icon: Ticket, label: 'Codes Invités', path: '/vouchers' },
+        { icon: Plus, label: 'Générer Codes', path: '/voucher-generator' },
         { icon: Activity, label: 'Sessions', path: '/sessions' },
+        { icon: Activity, label: 'Monitoring Sessions', path: '/session-monitor' },
+        { icon: Database, label: 'Gestion Quotas', path: '/quota-manager' },
         { icon: Calendar, label: 'Calendrier', path: '/calendar' },
         { icon: CheckSquare, label: 'Tâches', path: '/tasks' },
         { icon: FolderOpen, label: 'Fichiers', path: '/files' },
         { icon: StickyNote, label: 'Notes', path: '/notes' },
         { icon: UserCircle, label: 'Contacts', path: '/contacts' },
         ...(user?.role === 'SUPERADMIN' ? [
+          { icon: Server, label: 'Métriques Système', path: '/system-metrics' },
           { icon: Settings, label: 'Configuration', path: '/config' },
           { icon: Shield, label: 'Audit', path: '/audit' },
         ] : [])
