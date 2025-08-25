@@ -141,7 +141,7 @@ export function QuotaManager({ userQuotas, onExtendQuota, onSuspendUser, loading
               <TrendingUp className="h-5 w-5 text-red-400" />
               <div>
                 <p className="text-2xl font-bold text-white">{stats.criticalUsers}</p>
-                <p className="text-xs text-gray-400">Critiques (>90%)</p>
+                <p className="text-xs text-gray-400">Critiques (&gt;90%)</p>
               </div>
             </div>
           </CardContent>
